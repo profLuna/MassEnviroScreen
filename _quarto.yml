@@ -1,0 +1,4 @@
+project:
+  title: "MassEnviroScreen"
+  type: website
+  output-dir: docs
