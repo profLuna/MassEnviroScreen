@@ -675,8 +675,6 @@ MassEnviroScreen <- ma_blkgrp23 %>%
   left_join(., ejscreen, by = c("GEOID" = "ID")) %>% 
   left_join(., select(blrisk_tract, tract, EXPpctileBLRISK), 
             by = c("GEOID_TRACT" = "tract")) %>% 
-  # left_join(., select(bll_cosub, COSUB, EXPpctileBLL), by = "COSUB") %>% 
-  # left_join(., select(bll_cosub2, Geography, EXPpctileBLL2), by = c("COSUB" = "Geography")) %>% 
   left_join(., select(superfund_poly, GEOID, EFFCTpctileSUPERFUND), by = "GEOID") %>% 
   left_join(., select(brownfields, GEOID, EFFCTpctileBROWNFIELDS), by = "GEOID") %>% 
   left_join(., select(C21E_pt, GEOID, EFFCTpctileC21E), by = "GEOID") %>% 
