@@ -1,14 +1,15 @@
 # Generate MassEnviroScreen modeled on CalEnviroScreen
-
-library(tidyverse)
-library(sf)
-library(tidycensus)
-library(tigris)
+# load necessary libraries
+pacman::p_load(tidyverse, tidycensus, sf, tigris, readxl, foreign, nngeo, terra)
+# library(tidyverse)
+# library(sf)
+# library(tidycensus)
+# library(tigris)
+# library(readxl)
+# library(foreign)
+# library(nngeo) # to calculate nearest neighbor
+# library(terra)
 options(tigris_use_cache = TRUE)
-library(readxl)
-library(foreign)
-library(nngeo) # to calculate nearest neighbor
-library(terra)
 
 ## Generate socioeconomic factor indicators
 # identify census variables to download
@@ -76,9 +77,9 @@ ma_blkgrp23employ <- get_acs(geography = "block group", year = 2023, state = "MA
 
 # Percent of households in a census tract that are both low income (making less than 80% of the HUD Area Median Family Income) and severely burdened by housing costs (paying greater than 50% of their income to housing costs)
 # Download HUD CHAS (Comprehensive Housing Affordability Strategy) data at Census tract level. See https://www.huduser.gov/portal/datasets/cp.html
-# unzip("2017thru2021-140-csv.zip")
+# unzip("data/CHAS/2017thru2021-140-csv.zip")
 # read in relevant table
-hhburden <- read_csv("140/Table12.csv") %>% 
+hhburden <- read_csv("data/CHAS/140/Table12.csv") %>% 
   filter(st == "25") %>% 
   transmute(geoid = geoid, tract = tract, 
             hhburden = (T12_est7 + T12_est11 + T12_est24 + T12_est28 + T12_est41 + T12_est45 + 
@@ -107,7 +108,7 @@ ma_tract23 <- tracts(state = "MA", year = 2023) %>%
 
 ## Sensitive Population indicators
 # load CDC places data with prevalence values by census tract. see https://data.cdc.gov/500-Cities-Places/PLACES-Local-Data-for-Better-Health-Census-Tract-D/cwsq-ngmh/about_data
-health_tract <- read_csv("PLACES__Local_Data_for_Better_Health__Census_Tract_Data_2024_release_20241027.csv") %>% 
+health_tract <- read_csv("data/PLACES/PLACES__Local_Data_for_Better_Health__Census_Tract_Data_2024_release_20241027.csv") %>% 
   filter(StateDesc == "Massachusetts" & 
            Measure %in% c("High blood pressure among adults", # EPA recommended
                           # "Coronary heart disease among adults",
@@ -119,7 +120,7 @@ health_tract <- read_csv("PLACES__Local_Data_for_Better_Health__Census_Tract_Dat
          SPpctileCANCER = percent_rank(`Cancer (non-skin) or melanoma among adults`)*100)
 
 # load low birthweight data from MA Vital Stats. See https://www.mass.gov/info-details/birth-outcomes-data-of-massachusetts-residents 
-lbw_cosub <- read_excel("Birth_Community_Detailed_Topic_of_Massachusetts_Residents.xlsx", 
+lbw_cosub <- read_excel("data/MADPH/Birth_Community_Detailed_Topic_of_Massachusetts_Residents.xlsx", 
                         sheet = "Delivery Information") %>% 
   filter(`Delivery Information Topic` == "Birthweight" & 
            `Comparison Sub-Topic` %in% c("Low (LBW): <2500 grams", 
@@ -131,7 +132,7 @@ lbw_cosub <- read_excel("Birth_Community_Detailed_Topic_of_Massachusetts_Residen
 
 # RECOMMENDED ENVTL HEALTH DISPARITY INDICATOR BY EPA. see https://www.epa.gov/environmentaljustice/indicators-environmental-health-disparities
 # load pediatric asthma from MA Environmental Public Health Tracking. See https://matracking.ehs.state.ma.us/Health-Data/Asthma/index.html
-asthma_cosub <- read_csv("pediatricAsthma2017_23.csv") %>% 
+asthma_cosub <- read_csv("data/MADPH/pediatricAsthma2017_23.csv") %>% 
   filter(`School Year` %in% c("2017-2018","2022-2023")) %>% 
   mutate(Prevalence = as.numeric(Prevalence)) %>% 
   group_by(Geography) %>% 
@@ -139,13 +140,13 @@ asthma_cosub <- read_csv("pediatricAsthma2017_23.csv") %>%
   mutate(SPpctileASTHMAped = percent_rank(Prevalence)*100)
 
 # load myocardial infarction from MA Environmental Public Health Tracking. See https://matracking.ehs.state.ma.us/Health-Data/Asthma/index.html
-myocardio_cosub <- read_xlsx("MyoCardioInfarchospitalization2017_21per10k.xlsx") %>% 
+myocardio_cosub <- read_xlsx("data/MADPH/MyoCardioInfarchospitalization2017_21per10k.xlsx") %>% 
   filter(str_detect(`Geo Description`, " - Average")) %>% 
   mutate(`Age Adjusted Rate` = as.numeric(`Age Adjusted Rate`),
          SPpctileMYOC = percent_rank(`Age Adjusted Rate`)*100)
 
 # load ejscreen low life expectancy variable, although note that original data for that metric comes at tract level from Life Expectancy at Birth from CDC, National Center for Health Statistics https://www.cdc.gov/nchs/data-visualization/life-expectancy/index.html
-life_blkgrp <- read_csv("EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_VI.csv") %>% 
+life_blkgrp <- read_csv("data/EJSCREEN24/EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_VI.csv") %>% 
   filter(ST_ABBREV == "MA") %>% 
   select(ID, P_LIFEEXPPCT) %>% 
   rename_with(~str_remove(., "P_"), .cols = P_LIFEEXPPCT) %>% 
@@ -157,15 +158,14 @@ life_blkgrp <- read_csv("EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_VI.csv") %>%
 #               destfile = "EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_VI.csv.zip")
 # unzip("EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_VI.csv.zip", exdir = ".")
 # load ejscreen variables with percentile values; create for PRE1960PCT; rename
-ejscreen <- read_csv("EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_VI.csv") %>% 
+ejscreen <- read_csv("data/EJSCREEN24/EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_VI.csv") %>% 
   filter(ST_ABBREV == "MA") %>% 
-  mutate(P_PRE1960PCT = percent_rank(PRE1960PCT)*100) %>% 
   select(ID, P_PM25, P_OZONE, P_DSLPM, P_NO2, P_PTRAF, P_RSEI_AIR, P_DWATER) %>% 
   rename_with(~str_remove(., "P_"), .cols = P_PM25:P_DWATER) %>% 
   rename_with(~str_c("EXPpctile", .), .cols = PM25:DWATER)
 
 # Children's Lead Risk from Housing. Percentage of households within a census tract with likelihood of lead-based paint (LBP) hazards from the age of housing combined with the percentage of households that are both low-income (household income less than 80% of the county median family income) and have children under 6 years old. HERE WE USE HUD CHAS (Comprehensive Housing Affordability Strategy) data at Census tract level. See https://www.huduser.gov/portal/datasets/cp.html DIFFERENT FROM CALENVIROSCREEN METHOD. METRIC HERE IS HOUSING UNIT STRUCTURE BUILT BEFORE 1979 AND LESS THAN 80% HUD area median family income AND CHILDREN 6 OR YOUNGER. 
-blrisk_tract <- read_csv("140/Table13.csv") %>% 
+blrisk_tract <- read_csv("data/CHAS/140/Table13.csv") %>% 
   filter(st == "25") %>% 
   transmute(tract = paste0(st,cnty,tract), 
             blrisk = (T13_est21 + T13_est24 + T13_est27 + T13_est37 + T13_est40 + T13_est43 + 
@@ -173,20 +173,6 @@ blrisk_tract <- read_csv("140/Table13.csv") %>%
                         T13_est92)/T13_est1 * 100,
             EXPpctileBLRISK = percent_rank(blrisk)*100)
 
-# alt metric of lead risk is elevated blood lead level (> 5microgm/dl) in children 9mo - 4yrs
-bll_cosub <- read_xlsx("EJ Screening v1 Download State.xlsx") %>% 
-  filter(`Health Outcome` == "Lead Poisoning" & `Year or Year Range` == "2019 - 2023") %>% 
-  transmute(COSUB = `City/town`, 
-            bll_rate = as.numeric(`City/town Rate`),
-            EXPpctileBLL = percent_rank(bll_rate)*100)
-
-# alt metric of lead risk is elevated blood lead level (> 5microgm/dl) in children < 6yrs per 1k. See https://matracking.ehs.state.ma.us/Health-Data/Childhood_Blood_Lead_Levels.html
-bll_cosub2 <- read_csv("childhood-lead-poisoning2019_23under6yrs.csv") %>% 
-  filter(Sex == "Total") %>% 
-  mutate(`5 - < 10 ug/dL Combined Rate` = as.numeric(`5 - < 10 ug/dL Combined Rate`)) %>% 
-  group_by(Geography) %>% 
-  summarize(bll_rate = mean(`5 - < 10 ug/dL Combined Rate`, na.rm = TRUE)) %>% 
-  mutate(EXPpctileBLL2 = percent_rank(bll_rate)*100)
 
 ## Environmental Effects Indicators
 # Weighted sum of sites undergoing cleanup actions by governmental authorities or by property owners. 
@@ -211,9 +197,9 @@ ma_blocks <- get_decennial(geography = "block", year = 2020, state = "MA",
   st_transform(., crs = 26986) # transform to MA State Plane
 
 # Load Superfund sites from EPA OLEM at https://edg.epa.gov/data/PUBLIC/OLEM/OLEM-OSRTI/NPL_Boundaries.zip
-# unzip("NPL_Boundaries.zip")
-# st_layers("NPL_Boundaries.gdb")
-# superfund_poly <- st_read("NPL_Boundaries.gdb", "SITE_BOUNDARIES_SF") %>% 
+# unzip("data/EPA/NPL_Boundaries.zip")
+# st_layers("data/EPA/NPL_Boundaries.gdb")
+# superfund_poly <- st_read("data/EPA/NPL_Boundaries.gdb", "SITE_BOUNDARIES_SF") %>% 
 #   filter(STATE_CODE == "MA") %>% 
 #   st_transform(., crs = 26986)  # transform to MA State Plane
 # # calculate distance from superfund poly to nearest neighboring block within 1000m
@@ -223,9 +209,9 @@ ma_blocks <- get_decennial(geography = "block", year = 2020, state = "MA",
 #   # bind distances
 # superfund_poly$dists <- superfund_dist
 #   # save object with dists to avoid having to repeat
-# saveRDS(superfund_poly, file = "superfund_poly.rds")
+# saveRDS(superfund_poly, file = "data/EPA/superfund_poly.rds")
   # read in processed data with distance to nearest populated block
-superfund_poly <- readRDS("superfund_poly.rds")
+superfund_poly <- readRDS("data/EPA/superfund_poly.rds")
 # adjust weights by distance
 superfund_poly <- superfund_poly %>% 
   mutate(superfundScore = case_when(
@@ -245,7 +231,7 @@ superfund_poly <- superfund_poly %>%
   mutate(EFFCTpctileSUPERFUND = percent_rank(superfundScore)*100)
 
 # Load Brownfields from EPA ACRES
-# brownfields <- read_csv("Brownfield Properties (ACRES).csv") %>% 
+# brownfields <- read_csv("data/EPA/Brownfield Properties (ACRES).csv") %>% 
 #   filter(STATE_CODE == "MA") %>% 
 #   st_as_sf(., coords = c("LONGITUDE83", "LATITUDE83"), crs = 4269) %>% 
 #   st_transform(., crs = 26986)  # transform to MA State Plane
@@ -256,9 +242,9 @@ superfund_poly <- superfund_poly %>%
 # # bind distances
 # brownfields$dists <- brownfields_dist
 # # save object with dists to avoid having to repeat
-# saveRDS(brownfields, file = "brownfields.rds")
+# saveRDS(brownfields, file = "data/EPA/brownfields.rds")
 # read in processed data with distance to nearest populated block
-brownfields <- readRDS("brownfields.rds")
+brownfields <- readRDS("data/EPA/brownfields.rds")
 # adjust weights by distance
 brownfields <- brownfields %>% 
   mutate(brownfieldsScore = case_when(
@@ -279,9 +265,9 @@ brownfields <- brownfields %>%
 
 
 # load MA DEP 21E sites
-# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/c21e_pt.zip", destfile = "c21e_pt.zip")
-# # unzip("c21e_pt.zip")
-# C21E_pt <- st_read("C21E_PT.shp")
+# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/c21e_pt.zip", destfile = "data/MASSGIS/c21e_pt.zip")
+# # unzip("data/MASSGIS/c21e_pt.zip")
+# C21E_pt <- st_read("data/MASSGIS/C21E_PT.shp")
 # # calculate distance from 21E to nearest neighboring block within 1000m
 # C21E_pt_nn <- st_nn(C21E_pt, ma_blocks, k = 1, maxdist = 1000, returnDist = TRUE)
 # # extract distances from second list as vector
@@ -289,9 +275,9 @@ brownfields <- brownfields %>%
 # # bind distances
 # C21E_pt$dists <- C21E_pt_dist
 # # save object with dists to avoid having to repeat
-# saveRDS(C21E_pt, file = "C21E_pt.rds")
+# saveRDS(C21E_pt, file = "data/MASSGIS/C21E_pt.rds")
 # read in processed data with distance to nearest populated block
-C21E_pt <- readRDS("C21E_pt.rds")
+C21E_pt <- readRDS("data/MASSGIS/C21E_pt.rds")
 # adjust weights by distance
 C21E_pt <- C21E_pt %>% 
   mutate(C21E_ptScore = case_when(
@@ -312,9 +298,9 @@ C21E_pt <- C21E_pt %>%
 
 
 # load MA DEP AUL sites
-# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/aul_pt.zip", destfile = "aul_pt.zip")
-# unzip("aul_pt.zip")
-# aul_pt <- st_read("AUL_PT.shp")
+# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/aul_pt.zip", destfile = "data/MASSGIS/aul_pt.zip")
+# unzip("data/MASSGIS/aul_pt.zip")
+# aul_pt <- st_read("data/MASSGIS/AUL_PT.shp")
 # Determine which sites are within 1000m or less of populated census blocks and assign weights based on distances
 # calculate distance from aul to nearest neighboring block within 1000m WARNING - TAKES 15 MIN!
 # aul_nn <- st_transform(ma_blocks, crs = st_crs(aul_pt)) %>% 
@@ -324,9 +310,9 @@ C21E_pt <- C21E_pt %>%
 # # bind distances
 # aul_pt$dists <- aul_dist
 # # save object with dists to avoid having to repeat
-# saveRDS(aul_pt, file = "aul_pt.rds")
+# saveRDS(aul_pt, file = "data/MASSGIS/aul_pt.rds")
 # read in processed data with distance to nearest populated block
-aul_pt <- readRDS("aul_pt.rds")
+aul_pt <- readRDS("data/MASSGIS/aul_pt.rds")
 # adjust weights by distance
 aul_pt <- aul_pt %>% 
   mutate(aul_ptScore = case_when(
@@ -360,18 +346,18 @@ aul_pt <- aul_pt %>%
 ## Groundwater Threats: Land disposal sites, LUSTs, cleanup sites, dairy CAFOs
 # US EPA's UST Finder data is a national composite of leaking underground storage tanks, underground storage tank facilities, and underground storage tanks as of 2018-2021. Data downloaded via ArcGIS Pro at https://epa.maps.arcgis.com/home/item.html?id=5a3ae0ed53564b6fa519f08e30e79e93 
 # # load USTs
-# st_layers("USTfinder.gdb")
+# st_layers("data/EPA/USTfinder.gdb")
 # USTfeatures <- st_read("USTfinder.gdb", "USTfacilities") %>% 
 #   filter(State == "Massachusetts") %>% 
 #   st_transform(., crs = 26986)  # transform to MA State Plane
 # 
-# USTreleases <- st_read("USTfinder.gdb", "USTreleases") %>% 
+# USTreleases <- st_read("data/EPA/USTfinder.gdb", "USTreleases") %>% 
 #   filter(State == "Massachusetts" & !st_is_empty(.)) %>% 
 #   # filter(!st_is_empty(.)) %>% 
 #   st_zm(., drop = TRUE) %>% # GEOS doesn't support 3D geometry
 #   st_transform(., crs = 26986)  # transform to MA State Plane
 # 
-# USTs <- st_read("USTfinder.gdb", "USTs") %>% 
+# USTs <- st_read("data/EPA/USTfinder.gdb", "USTs") %>% 
 #   filter(State == "Massachusetts")
 # # calculate distance from UST to nearest neighboring block within 1000m
 # UST_nn <- st_nn(USTreleases, ma_blocks, k = 1, maxdist = 1000, returnDist = TRUE)
@@ -380,9 +366,9 @@ aul_pt <- aul_pt %>%
 # # bind distances
 # USTreleases$dists <- UST_dist
 # # save object with dists to avoid having to repeat
-# saveRDS(USTreleases, file = "USTreleases.rds")
+# saveRDS(USTreleases, file = "data/EPA/USTreleases.rds")
 # read in processed data with distance to nearest populated block
-USTreleases <- readRDS("USTreleases.rds")
+USTreleases <- readRDS("data/EPA/USTreleases.rds")
 # adjust weights by distance
 USTreleases <- USTreleases %>% 
   mutate(USTScore = case_when(
@@ -402,9 +388,9 @@ USTreleases <- USTreleases %>%
   mutate(EFFCTpctileUST = percent_rank(USTScore)*100)
 
 # MA DEP Groundwater Discharge Permits
-# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/gwp.zip", "gwp.zip")
-# unzip("gwp.zip")
-# GWP <- st_read("GWP_PT.shp")
+# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/gwp.zip", "data/MASSGIS/gwp.zip")
+# unzip("data/MASSGIS/gwp.zip")
+# GWP <- st_read("data/MASSGIS/GWP_PT.shp")
 # # calculate distance from GWP to nearest neighboring block within 1000m
 # GWP_nn <- st_nn(GWP, ma_blocks, k = 1, maxdist = 1000, returnDist = TRUE)
 # # extract distances from second list as vector
@@ -412,9 +398,9 @@ USTreleases <- USTreleases %>%
 # # bind distances
 # GWP$dists <- GWP_dist
 # # save object with dists to avoid having to repeat
-# saveRDS(GWP, file = "GWP.rds")
+# saveRDS(GWP, file = "data/MASSGIS/GWP.rds")
 # read in processed data with distance to nearest populated block
-GWP <- readRDS("GWP.rds")
+GWP <- readRDS("data/MASSGIS/GWP.rds")
 # adjust weights by distance
 GWP <- GWP %>% 
   mutate(GWPScore = case_when(
@@ -436,11 +422,11 @@ GWP <- GWP %>%
 
 
 # Hazardous Waste - MA DEP Major Facilities
-# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/bwpmajor_pt.zip", "bwpmajor_pt.zip")
+# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/bwpmajor_pt.zip", "data/MASSGIS/bwpmajor_pt.zip")
 # dir.create("bwp")
-# unzip("bwpmajor_pt.zip", exdir = "bwp")
+# unzip("bwpmajor_pt.zip", exdir = "data/MASSGIS")
 # # read in all major facilities
-# BWPMAJOR_PT <- st_read("bwp", "BWPMAJOR_PT")
+# BWPMAJOR_PT <- st_read("data/MASSGIS", "BWPMAJOR_PT")
 # # calculate distance from BWP to nearest neighboring block within 1000m
 # BWP_nn <- st_nn(BWPMAJOR_PT, ma_blocks, k = 1, maxdist = 1000, returnDist = TRUE)
 # # extract distances from second list as vector
@@ -448,9 +434,9 @@ GWP <- GWP %>%
 # # bind distances
 # BWPMAJOR_PT$dists <- BWP_dist
 # # save object with dists to avoid having to repeat
-# saveRDS(BWPMAJOR_PT, file = "BWPMAJOR_PT.rds")
+# saveRDS(BWPMAJOR_PT, file = "data/MASSGIS/BWPMAJOR_PT.rds")
 # read in processed data with distance to nearest populated block
-BWPMAJOR_PT <- readRDS("BWPMAJOR_PT.rds")
+BWPMAJOR_PT <- readRDS("data/MASSGIS/BWPMAJOR_PT.rds")
 # adjust weights by distance
 BWPMAJOR_PT <- BWPMAJOR_PT %>% 
   mutate(BWPScore = case_when(
@@ -477,15 +463,15 @@ BWPMAJOR_PT <- BWPMAJOR_PT %>%
 
 # Solid Waste
 # Acquire MassDEP Solid Waste Diversion and Disposal layer (only valid until 2016)
-# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/solidwaste.zip", "solidwaste.zip")
+# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/solidwaste.zip", "data/MASSGIS/solidwaste.zip")
 # dir.create("solidwaste")
-# unzip("solidwaste.zip", exdir = "solidwaste")
+# unzip("data/MASSGIS/solidwaste.zip", exdir = "data/MASSGIS")
 # # read in solid waste polygons
-# sw_poly <- st_read("solidwaste", "SW_LD_POLY")
+# sw_poly <- st_read("data/MASSGIS", "SW_LD_POLY")
 # # read in solid waste dumping grounds
-# sw_dump <- st_read("solidwaste", "SW_LD_POLY_DUMPINGGROUND")
+# sw_dump <- st_read("data/MASSGIS", "SW_LD_POLY_DUMPINGGROUND")
 # # read in solid waste points
-# sw_pt <- st_read("solidwaste", "SW_LD_PT")
+# sw_pt <- st_read("data/MASSGIS", "SW_LD_PT")
 # # calculate distance from SW to nearest neighboring block within 1000m
 # sw_poly_nn <- st_nn(sw_poly, ma_blocks, k = 1, maxdist = 1000, returnDist = TRUE)
 # # extract distances from second list as vector
@@ -493,9 +479,9 @@ BWPMAJOR_PT <- BWPMAJOR_PT %>%
 # # bind distances
 # sw_poly$dists <- sw_poly_dist
 # # save object with dists to avoid having to repeat
-# saveRDS(sw_poly, file = "sw_poly.rds")
+# saveRDS(sw_poly, file = "data/MASSGIS/sw_poly.rds")
 # read in processed data with distance to nearest populated block
-sw_poly <- readRDS("sw_poly.rds")
+sw_poly <- readRDS("data/MASSGIS/sw_poly.rds")
 # adjust weights by distance
 sw_poly <- sw_poly %>% 
   mutate(SWScore = case_when(
@@ -543,17 +529,17 @@ sw_poly <- sw_poly %>%
 # Impaired Waters - MassDEP 2022 Integrated List of Waters (305(b)/303(d))
 # Identify streams and rivers < 100km in length that fall within 1 km of populated block; 2km for rivers > 100km. Identify lakes, bays, estuaries or shoreline < 25km2 within 1km; 2km for those > 25km2. Count number of unique pollutants from arcs and separately from polys falling within each block group. Sum these counts. 
 # pseudo code: 1) get distances to nearest populated block; 2) filter by distance and water body size criteria; 3) join to overlapping block groups; 4) count number of unique pollutants from arcs and separately from polys falling within each block group. Sum these counts for each block group.
-# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/il2022_shp.zip", "il2022_shp.zip")
+# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/il2022_shp.zip", "data/MASSGIS/il2022_shp.zip")
 # dir.create("waters")
-# unzip("il2022_shp.zip", exdir = "waters")
+# unzip("data/MASSGIS/il2022_shp.zip", exdir = "data/MASSGIS")
 # read in streams, rivers lines
-# IL_2022_ARC <- st_read("waters", "IL_2022_ARC") %>% 
+# IL_2022_ARC <- st_read("data/MASSGIS", "IL_2022_ARC") %>% 
 #   filter(CATEGORY == "5")
 # # read in Lakes, Estuaries
-# IL_2022_POLY <- st_read("waters", "IL_2022_POLY") %>% 
+# IL_2022_POLY <- st_read("data/MASSGIS", "IL_2022_POLY") %>% 
 #   filter(CATEGORY == "5")
 # read in table of attributes
-IL_ATTAINS_2022 <- read.dbf("waters/IL_ATTAINS_2022.dbf") %>% 
+IL_ATTAINS_2022 <- read.dbf("data/MASSGIS/IL_ATTAINS_2022.dbf") %>% 
   filter(CATEGORY == "5" & POLTNT_FLG == "Y")
 
 # recode causes to identify unique pollutants
@@ -597,11 +583,11 @@ IL_ATTAINS_2022 <- IL_ATTAINS_2022 %>%
 # IL_2022_ARC$dists <- IL_arcs_dist
 # IL_2022_POLY$dists <- IL_polys_dist
 # # save object with dists to avoid having to repeat
-# saveRDS(IL_2022_ARC, file = "IL_2022_ARC.rds")
-# saveRDS(IL_2022_POLY, file = "IL_2022_POLY.rds")
+# saveRDS(IL_2022_ARC, file = "data/MASSGIS/IL_2022_ARC.rds")
+# saveRDS(IL_2022_POLY, file = "data/MASSGIS/IL_2022_POLY.rds")
 # read in processed data with distance to nearest populated block
-IL_2022_ARC <- readRDS("IL_2022_ARC.rds")
-IL_2022_POLY <- readRDS("IL_2022_POLY.rds")
+IL_2022_ARC <- readRDS("data/MASSGIS/IL_2022_ARC.rds")
+IL_2022_POLY <- readRDS("data/MASSGIS/IL_2022_POLY.rds")
 
 # filter based on distances, join overlapping block groups to assign GEOID, join wtih attributes, group by GEOID, and sum unique pollutants
 arc_pollutants <- IL_2022_ARC %>% 
@@ -636,7 +622,7 @@ IL_sum <- ma_blkgrp23 %>%
 ## Climate Risks/Vulnerabilities (following Colorado EnviroScreen model)
 ### Drought. Sum of weekly total percent of an area experiencing a severe, extreme, or exceptional drought (categories D2, D3, or D4).The U.S. Drought Monitor reports the percentage of each county experiencing each of the six drought levels (None, D0, D1, D2, D3, and D4) each week. The sum of areas experiencing D2, D3, D4 level droughts was calculated weekly across all weeks from January 2019 to December 2024. The sum of the weekly drought values across that time period was used to define the Drought measure. All census tracts and census block groups received the Drought value for the county in which they are located.
 # read in drought monitor data from U.S. Drought Monitor 2019-2023 https://droughtmonitor.unl.edu/Data.aspx
-drought <- read_csv("drought/dm_export_20190101_20250504.csv") %>% 
+drought <- read_csv("data/USDA/dm_export_20190101_20250504.csv") %>% 
   filter(MapDate < 20250000 & MapDate > 20190000) %>% # limit to 2019 to 2024
   rowwise() %>% 
   mutate(droughtSum = sum(D2, D3, D4), # sum severe/extreme/exceptional drought pcts per week
@@ -646,7 +632,7 @@ drought <- read_csv("drought/dm_export_20190101_20250504.csv") %>%
   mutate(CLIMpctilDrought = percent_rank(droughtSum)*100)
 
 # Wildfire risk. The mean wildfire hazard potential within each geographic area is used as the Wildfire risk score. U.S. Department of Agriculture (USDA), U.S. Forest Service (USFS) https://www.fs.usda.gov/rds/archive/catalog/RDS-2015-0047-4
-fire <- rast("wildfire/Data/whp2023_GeoTIF/whp2023_cls_conus.tif") %>% 
+fire <- rast("data/USDA/Data/whp2023_GeoTIF/whp2023_cls_conus.tif") %>% 
   project(., "epsg:26986") %>% 
   crop(., vect(ma_blkgrp23)) %>% 
   extract(., vect(ma_blkgrp23), fun = mean, na.rm = TRUE, bind = TRUE) %>% 
@@ -657,7 +643,7 @@ fire <- rast("wildfire/Data/whp2023_GeoTIF/whp2023_cls_conus.tif") %>%
   st_drop_geometry(.)
 
 # Flood risk. The area of all features with 1% Annual Chance Flood Hazard within a geographic area divided by the total area of the geographic area. If no flood areas were found within the geographic area, a value of zero was used. MassGIS https://www.mass.gov/info-details/massgis-data-fema-national-flood-hazard-layer
-flood <- st_read("flood/FEMA_NFHL_POLY.shp") %>% 
+flood <- st_read("data/MASSGIS/FEMA_NFHL_POLY.shp") %>% 
   filter(FLD_ZONE %in% c("A", "AE", "AH", "AO", "VE")) %>% 
   st_intersection(., ma_blkgrp23) %>% 
   mutate(fldArea = as.numeric(st_area(.))) %>% 
@@ -675,7 +661,7 @@ flood <- ma_blkgrp23 %>%
   st_drop_geometry(.)
 
 # Heat. Average number of days between May and September from 2019 through 2023 in which daily high temperature exceeded the 90th percentile of historical daily high temperatures. Data Source: National Environmental Public Health Tracking Network via the U.S. Centers for Disease Control (CDC), Heat & Heat Related Illness (HRI), Historical Temperature & Heat Index, 2019-2023 https://ephtracking.cdc.gov/ . Query: Heat & Health-Related Illness (HRI > Historical Temperature & Heat Index > Annual Number of Extreme Heat Days > MA Census Tracts > 2019 - 2023 > Heat Metric Max Daily Temp > Relative Threshold 90th Percentile)
-heat <- read_csv("heat/data_134739.csv") %>% 
+heat <- read_csv("data/CDC/data_134739.csv") %>% 
   mutate(CensusTract = as.character(CensusTract)) %>% 
   group_by(CensusTract) %>% 
   summarize(heatMean = mean(Value, na.rm = TRUE)) %>% 
@@ -739,338 +725,4 @@ MassEnviroScreen <- ma_blkgrp23 %>%
          MassEnviroScore = percent_rank(MassEnviroScoreRaw)*100) # scaled final score 1 - 100
 
 # save for later analysis
-saveRDS(MassEnviroScreen, "MassEnviroScreen2.rds")
-# read in data
-MassEnviroScreen <- readRDS("MassEnviroScreen2.rds")
-
-# check for NAs in each column
-# sapply(MassEnviroScreen, function(x) sum(is.na(x)))
-
-
-
-
-
-
-
-
-
-
-### EXPLORE MASSENVIROSCREEN DATA
-
-# How many BGs meet 75th percentile?
-MassEnviroScreen %>% 
-  filter(MassEnviroScore >= 75) %>% 
-  nrow()
-  
-# map it out
-library(tmap)
-tmap_mode("view")
-
-# use clean boundaries
-MassEnviroScreen <- block_groups(state = "MA", year = 2023, cb = TRUE) %>% 
-  filter(!st_is_empty(.)) %>% 
-  st_transform(., crs = 26986) %>%  # transform to MA State Plane
-  select(GEOID) %>% 
-  left_join(., st_drop_geometry(MassEnviroScreen), by = "GEOID")
-
-# save CB copy to MassEnviroScreen app folder
-saveRDS(MassEnviroScreen, "MassEnviroScreen-app/MassEnviroScreen.rds")
-
-# read in data
-MassEnviroScreen <- readRDS("MassEnviroScreen.rds")
-
-MassEnviroScreen <- block_groups(state = "MA", year = 2023, cb = TRUE) %>% 
-  filter(!st_is_empty(.)) %>% 
-  # st_transform(., crs = 26986) %>%  # transform to MA State Plane
-  select(GEOID) %>% 
-  left_join(., st_drop_geometry(MassEnviroScreen), by = "GEOID")
-
-
-MassEnviroScreen %>% 
-  tm_shape(.) +
-  tm_fill(col = "MassEnviroScore", palette = "-RdYlGn", alpha = 0.4, n = 10)
-
-# define disadvantaged communities similar to CalEnviroScreen and overlay MA EJ BGs
-MassEnviroScreen %>% 
-  filter(MassEnviroScore >= 75) %>% 
-  tm_shape(.) + tm_fill(col = "red", alpha = 0.5) +
-  tm_shape(EJ2020) + tm_borders(col = "blue", lwd = 1, alpha = 0.5)
-
-
-# compare to MA EJ Populations
-# Download MassGIS defined EJ communities
-# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/census2020/ej2020.zip",
-#               "ej2020.zip")
-# unzip("ej2020.zip")
-
-# read in EJ sf
-EJ2020 <- st_read("EJ_POLY.shp") %>% 
-  filter(!st_is_empty(.)) %>% 
-  st_make_valid(.)
-
-# join to massenviroscreen and compare 
-MassEnviroScreen2 <- MassEnviroScreen %>% 
-  left_join(., st_drop_geometry(EJ2020), by = "GEOID")
-
-# map out EJ BGs lost by 75th percentile approach
-MassEnviroScreen2 %>% 
-  filter(MassEnviroScore < 75 & EJ == "Yes") %>% 
-  tm_shape(.) + tm_fill(col = "red", alpha = 0.5)
-
-# what proportion of MA EJ BGs coincide with MassEnviroScreen 75th percentile BGs?
-MassEnviroScreen2 %>% 
-  filter(MassEnviroScore >= 75 & EJ == "Yes") %>% 
-  nrow()/nrow(EJ2020)
-
-# what proportion of 75h percentile BGs coincide with MA EJ BGs?
-MassEnviroScreen2 %>% 
-  filter(MassEnviroScore >= 75 & EJ == "Yes") %>% 
-  nrow()/nrow(MassEnviroScreen[MassEnviroScreen$MassEnviroScore>=75,])
-
-# 75th percentile captures a little less than half of MA EJ BGs. However, ~91% of 75th percentile BGs coincide with MA EJ BGs. 
-
-
-
-
-
-
-# create a map showing disadvantaged communities defined by MassEnviroScreen as BGs at 75th percentile or higher for MassEnviroScreen score
-library(tidyverse)
-library(sf)
-library(tidycensus)
-library(tigris)
-options(tigris_use_cache = TRUE)
-# read in data
-MassEnviroScreen <- readRDS("MassEnviroScreen.rds")
-MA_EJ23 <- readRDS("ma_blkgrpEJ23.rds")
-MassEnviroScreen <- block_groups(state = "MA", year = 2023, cb = TRUE) %>% 
-  filter(!st_is_empty(.)) %>% 
-  # st_transform(., crs = 26986) %>%  # transform to MA State Plane
-  select(GEOID) %>% 
-  left_join(., st_drop_geometry(MassEnviroScreen), by = "GEOID") %>% 
-  select(GEOID, COSUB, PollutionBurden10, PopCharacteristics10, MassEnviroScore) %>% 
-  mutate(PollutionBurden100 = PollutionBurden10*10,
-         PopCharacteristics100 = PopCharacteristics10*10) %>% 
-  select(-PollutionBurden10, -PopCharacteristics10) %>% 
-  st_transform("+proj=longlat +datum=WGS84") %>% 
-  left_join(., MA_EJ23, by = "GEOID")
-
-# # Download MassGIS defined EJ communities
-# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/census2020/ej2020.zip",
-#               "ej2020.zip")
-# unzip("ej2020.zip")
-
-# # read in EJ sf
-# EJ2020 <- st_read("EJ_POLY.shp") %>%
-#   filter(!st_is_empty(.)) %>%
-#   st_make_valid(.) %>%
-#   # st_drop_geometry(.) %>%
-#   select(GEOGRAPHIC, GEOID, PCT_MINORI, LIMENGHHPC, MUNI_MHHI, EJ, EJ_CRIT_DE) %>%
-#   mutate(GEOGRAPHIC = str_remove(GEOGRAPHIC, ", Massachusetts")) %>% 
-#   st_transform("+proj=longlat +datum=WGS84")
-
-# read in MA EJ block groups and create subset of EJ bgs
-MA_EJ23 <- MassEnviroScreen %>% 
-  filter(EJ == "Yes")
-
-# read in county subdivisions
-ma_cosubs <- county_subdivisions(state = "MA", cb = TRUE, year = 2023) %>% 
-  st_transform("+proj=longlat +datum=WGS84")
-
-
-# draw the map
-library(leaflet)
-library(leaflet.providers)
-
-# Create popup. NOTE THAT POPUP AND PALETTE MUST BE CREATED FROM EXACT SAME DF AS USED IN leaflet() MAP. OTHERWISE, POPUPS WILL SHOW UP IN THE WRONG LOCATION!
-
-MassEnviroScreen75 <- MassEnviroScreen %>% 
-  filter(MassEnviroScore >= 75)
-
-# create palette for MassEnviroScore. need to create asymmetric palette to center on 75. 
-# identify number of rows with values below 75
-x <- sum(MassEnviroScreen$MassEnviroScore < 75)
-### Create an asymmetric color range
-## Make vector of colors for values smaller than 75 (3830 colors)
-library(RColorBrewer)
-rc1 <- colorRampPalette(colors = c("#053061", "#f7f7f7"), space = "Lab")(x)
-## Make vector of colors for values larger than 75 
-rc2 <- colorRampPalette(colors = c("#f7f7f7", "#b2182b"), space = "Lab")(length(MassEnviroScreen$MassEnviroScore) - x)
-## Combine the two color palettes
-rampcols <- c(rc1, rc2)
-# Create a palette to fill in the polygons
-MESpal <- colorNumeric(palette = rampcols, domain = MassEnviroScreen$MassEnviroScore, 
-                       na.color = NA)
-
-# create popups for disadvantaged communities
-MES75PopUp <- paste0(MassEnviroScreen75$NAME, "<br/>",
-                      "<b>Town:</b> ", MassEnviroScreen75$MUNI, "<br/>",
-                      "<b><font color=#FF0000>MassEnviroScore:</font></b> ", round(MassEnviroScreen75$MassEnviroScore,1), "<br/>",
-                      "<b>Pollution Burden SubScore:</b> ", round(MassEnviroScreen75$PollutionBurden100,1), "<br/>",
-                     "<b>Sensitive Pop SubScore:</b> ", round(MassEnviroScreen75$PopCharacteristics100,1), "<br/>",
-                     "<b>MA EJ Pop? </b>", MassEnviroScreen75$EJ,"<br/>",
-                      "<b>Minority: </b>", paste0(round(MassEnviroScreen75$minorityPctE,1),"%"),"<br/>",
-                      "<b>Median Household Income: </b>", paste0("$",formatC(MassEnviroScreen75$medHHincE, format = "d", big.mark=",")),"<br/>",
-                      "<b>Limited English Households: </b>", paste0(round(MassEnviroScreen75$limitEngpctE,1)),"%")
-
-# repeat for MA EJ layer. if MA EJ block group is below 75th percentile, make label color for MassEnviroScore green. 
-MAEJpopup <- if_else(MA_EJ23$MassEnviroScore >= 75, 
-                     paste0(MA_EJ23$NAME, "<br/>",
-                    "<b>Town:</b> ", MA_EJ23$MUNI, "<br/>",
-                    "<b><font color=#FF0000>MassEnviroScore:</font></b> ", round(MA_EJ23$MassEnviroScore,1), "<br/>",
-                    "<b>Pollution Burden SubScore:</b> ", round(MA_EJ23$PollutionBurden100,1), "<br/>",
-                    "<b>Sensitive Pop SubScore:</b> ", round(MA_EJ23$PopCharacteristics100,1), "<br/>",
-                    "<b>MA EJ Pop? </b>", MA_EJ23$EJ,"<br/>",
-                    "<b>Minority: </b>", paste0(round(MA_EJ23$minorityPctE,1),"%"),"<br/>",
-                    "<b>Median Household Income: </b>", paste0("$",formatC(MA_EJ23$medHHincE, format = "d", big.mark=",")),"<br/>",
-                    "<b>Limited English Households: </b>", paste0(round(MA_EJ23$limitEngpctE,1)),"%"),
-                    paste0(MA_EJ23$NAME, "<br/>",
-                           "<b>Town:</b> ", MA_EJ23$MUNI, "<br/>",
-                           "<b><font color=#0B6623>MassEnviroScore:</font></b> ", round(MA_EJ23$MassEnviroScore,1), "<br/>",
-                           "<b>Pollution Burden SubScore:</b> ", round(MA_EJ23$PollutionBurden100,1), "<br/>",
-                           "<b>Sensitive Pop SubScore:</b> ", round(MA_EJ23$PopCharacteristics100,1), "<br/>",
-                           "<b>MA EJ Pop? </b>", MA_EJ23$EJ,"<br/>",
-                           "<b>Minority: </b>", paste0(round(MA_EJ23$minorityPctE,1),"%"),"<br/>",
-                           "<b>Median Household Income: </b>", paste0("$",formatC(MA_EJ23$medHHincE, format = "d", big.mark=",")),"<br/>",
-                           "<b>Limited English Households: </b>", paste0(round(MA_EJ23$limitEngpctE,1)),"%"))
-
-# repeat for MassEnviroScore layer. if block group is below 75th percentile, make label text color for MassEnviroScore green. 
-MESscorePopup <- if_else(MassEnviroScreen$MassEnviroScore >= 75, 
-                     paste0(MassEnviroScreen$NAME, "<br/>",
-                            "<b>Town:</b> ", MassEnviroScreen$MUNI, "<br/>",
-                            "<b><font color=#FF0000>MassEnviroScore:</font></b> ", round(MassEnviroScreen$MassEnviroScore,1), "<br/>",
-                            "<b>Pollution Burden SubScore:</b> ", round(MassEnviroScreen$PollutionBurden100,1), "<br/>",
-                            "<b>Sensitive Pop SubScore:</b> ", round(MassEnviroScreen$PopCharacteristics100,1), "<br/>",
-                            "<b>MA EJ Pop? </b>", MassEnviroScreen$EJ,"<br/>",
-                            "<b>Minority: </b>", paste0(round(MassEnviroScreen$minorityPctE,1),"%"),"<br/>",
-                            "<b>Median Household Income: </b>", paste0("$",formatC(MassEnviroScreen$medHHincE, format = "d", big.mark=",")),"<br/>",
-                            "<b>Limited English Households: </b>", paste0(round(MassEnviroScreen$limitEngpctE,1)),"%"),
-                     paste0(MassEnviroScreen$NAME, "<br/>",
-                            "<b>Town:</b> ", MassEnviroScreen$MUNI, "<br/>",
-                            "<b><font color=#0B6623>MassEnviroScore:</font></b> ", round(MassEnviroScreen$MassEnviroScore,1), "<br/>",
-                            "<b>Pollution Burden SubScore:</b> ", round(MassEnviroScreen$PollutionBurden100,1), "<br/>",
-                            "<b>Sensitive Pop SubScore:</b> ", round(MassEnviroScreen$PopCharacteristics100,1), "<br/>",
-                            "<b>MA EJ Pop? </b>", MassEnviroScreen$EJ,"<br/>",
-                            "<b>Minority: </b>", paste0(round(MassEnviroScreen$minorityPctE,1),"%"),"<br/>",
-                            "<b>Median Household Income: </b>", paste0("$",formatC(MassEnviroScreen$medHHincE, format = "d", big.mark=",")),"<br/>",
-                            "<b>Limited English Households: </b>", paste0(round(MassEnviroScreen$limitEngpctE,1)),"%"))
-
-# draw the map
-leaflet() %>% 
-  addProviderTiles(providers$CartoDB.Positron) %>%
-  setView(-71.75, 42.1, 8) %>%
-  addPolygons(data = ma_cosubs,
-              weight = 0.7,
-              opacity = 0,
-              color = "gray",
-              # fill = FALSE,
-              fillOpacity = 0,
-              label=~NAME, popup=~NAME) %>%
-  addPolygons(data = ma_cosubs,
-              weight = 0.7,
-              opacity = 1,
-              color = "gray",
-              fill = FALSE,
-              fillOpacity = 0,
-              label=~NAME, popup=~NAME, 
-              group='city/town boundary') %>%
-  addPolygons(data = MA_EJ23, 
-              weight = 0.5,
-              opacity = 0.5,
-              color = "black",
-              fillColor = "gray",
-              fillOpacity = 0.3,
-              dashArray = 3,
-              highlightOptions = highlightOptions(
-                weight = 5,
-                color = "#666",
-                dashArray = "",
-                fillOpacity = 0.7,
-                bringToFront = TRUE),
-              label = ~MUNI,
-              popup = MAEJpopup,
-              group = "MA EJ Populations") %>% 
-  addPolygons(data = MassEnviroScreen75, 
-              fillColor = "red", 
-              fillOpacity = 0.5,
-              dashArray = 3,
-              highlightOptions = highlightOptions(
-                weight = 5,
-                color = "#666",
-                dashArray = "",
-                fillOpacity = 0.7,
-                bringToFront = TRUE),
-              weight = 0.5,
-              color = "yellow",
-              label = ~COSUB,
-              popup = MES75PopUp,
-              group = "Disadvantaged Communities") %>% 
-  addPolygons(data = MassEnviroScreen, 
-              fillColor = ~MESpal(MassEnviroScore), 
-              fillOpacity = 0.5,
-              dashArray = 3,
-              highlightOptions = highlightOptions(
-                weight = 5,
-                color = "#666",
-                dashArray = "",
-                fillOpacity = 0.7,
-                bringToFront = TRUE),
-              opacity = 0,
-              weight = 0,
-              # color = "white",
-              label = ~COSUB,
-              popup = MESscorePopup,
-              group = "MassEnviroScore") %>% 
-  addLayersControl(
-    # baseGroups are toggle radio buttons; only 1 at at time
-    baseGroups = c("Disadvantaged Communities", "MassEnviroScore"),
-    # overlayGroups are checkbox layers that can all be on or off
-    overlayGroups = c("MA EJ Populations", "city/town boundary"),
-    options = layersControlOptions(
-      collapsed = FALSE,
-      autoZIndex = TRUE)) %>% 
-  hideGroup(c("MA EJ Populations", "city/town boundary")) %>% 
-  addLegend(position = "bottomright",  
-            colors = "red", 
-            opacity = 0.5,
-            title = "MassEnviroScreen",
-            labels = "Disadvantaged Communities",
-            layerId = "Disadvantaged Communities") %>% 
-  addLegend(position = "bottomright",  
-            pal = MESpal, 
-            values = MassEnviroScreen$MassEnviroScore,
-            opacity = 0.5,
-            title = "MassEnviroScore",
-            # labels = "MassEnviroScore",
-            layerId = "MassEnviroScore") %>%
-  addLegend(position = "bottomright",  
-            colors = "gray", 
-            opacity = 0.3,
-            # title = "MA EJ Population",
-            labels = "MA EJ Populations",
-            group = "MA EJ Populations") %>% 
-  # A hack to have the legends associated with radio-button "Base Groups" in R leaflet maps toggle along with layers. see https://gist.github.com/noamross/98c2053d81085517e686407096ec0a69
-  htmlwidgets::onRender("
-    function(el, x) {
-      var initialLegend = 'Disadvantaged Communities' // Set the initial legend to be displayed by layerId
-      var myMap = this;
-      for (var legend in myMap.controls._controlsById) {
-        var el = myMap.controls.get(legend.toString())._container;
-        if(legend.toString() === initialLegend) {
-          el.style.display = 'block';
-        } else {
-          el.style.display = 'none';
-        };
-      };
-    myMap.on('baselayerchange',
-      function (layer) {
-        for (var legend in myMap.controls._controlsById) {
-          var el = myMap.controls.get(legend.toString())._container;
-          if(legend.toString() === layer.name) {
-            el.style.display = 'block';
-          } else {
-            el.style.display = 'none';
-          };
-        };
-      });
-    }")
+saveRDS(MassEnviroScreen, "MassEnviroScreen.rds")
