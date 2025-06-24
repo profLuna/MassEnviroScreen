@@ -108,4 +108,4 @@ ma_blkgrp23 <- ma_blkgrp23 %>%
            .default = ""
          ))
 
-saveRDS(ma_blkgrp23, "data/ma_blkgrpEJ23.rds")
+saveRDS(ma_blkgrp23, "ma_blkgrpEJ23.rds")
