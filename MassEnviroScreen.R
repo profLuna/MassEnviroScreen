@@ -461,69 +461,137 @@ BWPMAJOR_PT <- BWPMAJOR_PT %>%
   mutate(EFFCTpctileBWPMAJOR_PT = percent_rank(BWPScore)*100)
 
 
+# Acquire MassDEP Solid Waste Diversion and Disposal layer
 # Solid Waste
-# Acquire MassDEP Solid Waste Diversion and Disposal layer (only valid until 2016)
-# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/solidwaste.zip", "data/MASSGIS/solidwaste.zip")
-# dir.create("solidwaste")
-# unzip("data/MASSGIS/solidwaste.zip", exdir = "data/MASSGIS")
-# # read in solid waste polygons
-# sw_poly <- st_read("data/MASSGIS", "SW_LD_POLY")
-# # read in solid waste dumping grounds
-# sw_dump <- st_read("data/MASSGIS", "SW_LD_POLY_DUMPINGGROUND")
-# # read in solid waste points
-# sw_pt <- st_read("data/MASSGIS", "SW_LD_PT")
-# # calculate distance from SW to nearest neighboring block within 1000m
-# sw_poly_nn <- st_nn(sw_poly, ma_blocks, k = 1, maxdist = 1000, returnDist = TRUE)
-# # extract distances from second list as vector
-# sw_poly_dist <- sapply(sw_poly_nn[[2]], "[", 1)
-# # bind distances
-# sw_poly$dists <- sw_poly_dist
-# # save object with dists to avoid having to repeat
-# saveRDS(sw_poly, file = "data/MASSGIS/sw_poly.rds")
-# read in processed data with distance to nearest populated block
+download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/solidwaste.zip", "data/MASSGIS/solidwaste.zip")
+unzip("data/MASSGIS/solidwaste.zip", exdir = "data/MASSGIS")
+# read in land disposal solid waste polygons
+sw_poly <- st_read("data/MASSGIS", "SW_LD_POLY")
+# read in handling facilities: woodwaste, compost, other site points
+sw_hf_wwcooth <- st_read("data/MASSGIS", "BWP_PT_HF_WWCOOTH")
+# read in handling facilities: large transfer stations, 50 tons or more/day site points
+sw_hf_transfer <- st_read("data/MASSGIS", "BWP_PT_HF_TRANSFER")
+# read in handling facilities: small transfer stations < 50 tons/day site points
+sw_hf_transfer_sm <- st_read("data/MASSGIS", "BWP_PT_HF_TRANS_SM")
+# read in handling facilities: construction & demolition processors site points
+sw_hf_CD_PROC <- st_read("data/MASSGIS", "BWP_PT_HF_CD_PROC")
+# read in Recycling, Composting and other waste Conversion Operations site points
+sw_recyc_conv <- st_read("data/MASSGIS", "BWP_PT_OPX_RECY_CONV")
+# read in active combustion facilities site points
+sw_combust <- st_read("data/MASSGIS", "BWP_PT_COMBUSTION")
+# read in inactive or historic combustion facilities site points
+sw_combust_inact <- st_read("data/MASSGIS", "BWP_PT_COMBUSTION_HISTORIC")
+# combine point files
+sw_pt <- sw_combust %>% 
+  mutate(CLASS_TYPE = "COMBUST", .after = REGION)
+sw_pt <- sw_combust_inact %>% 
+  mutate(CLASS_TYPE = "COMBUST INACTIVE", .after = REGION) %>% 
+  bind_rows(sw_pt, .)
+sw_pt <- sw_hf_CD_PROC %>% 
+  mutate(CLASS_TYPE = "HF CD PROC", .after = REGION) %>% 
+  bind_rows(sw_pt, .)
+sw_pt <- sw_hf_transfer %>% 
+  mutate(CLASS_TYPE = "HF TRANSFER", .after = REGION) %>% 
+  bind_rows(sw_pt, .)
+sw_pt <- sw_hf_transfer_sm %>% 
+  mutate(CLASS_TYPE = "HF TRANSFER SM", .after = REGION) %>% 
+  bind_rows(sw_pt, .)
+sw_pt <- sw_hf_wwcooth %>% 
+  bind_rows(sw_pt, .)
+sw_pt <- sw_recyc_conv %>% 
+  bind_rows(sw_pt, .)
+# calculate distance from SW to nearest neighboring block within 1000m
+sw_poly_nn <- st_nn(sw_poly, ma_blocks, k = 1, maxdist = 1000, returnDist = TRUE)
+sw_pt_nn <- st_nn(sw_pt, ma_blocks, k = 1, maxdist = 1000, returnDist = TRUE)
+# extract distances from second list as vector
+sw_poly_dist <- sapply(sw_poly_nn[[2]], "[", 1)
+sw_pt_dist <- sapply(sw_pt_nn[[2]], "[", 1)
+# bind distances
+sw_poly$dists <- sw_poly_dist
+sw_pt$dists <- sw_pt_dist
+# save object with dists to avoid having to repeat
+saveRDS(sw_poly, file = "data/MASSGIS/sw_poly.rds")
+saveRDS(sw_pt, file = "data/MASSGIS/sw_pt.rds")
+# read in objects
 sw_poly <- readRDS("data/MASSGIS/sw_poly.rds")
-# adjust weights by distance
+sw_pt <- readRDS("data/MASSGIS/sw_pt.rds")
+# adjust weights by distance for sw polys
 sw_poly <- sw_poly %>% 
   mutate(SWScore = case_when(
-    dists > 1000 ~ 0, 
-    # CATGRPGIS == "DG" & dists >= 750 & dists <= 1000 ~ 0.1*6,
-    # CATGRPGIS == "DG" & dists >= 500 & dists < 750 ~ 0.25*6,
-    # CATGRPGIS == "DG" & dists >= 250 & dists < 500 ~ 0.5*6,
-    # CATGRPGIS == "DG" & dists < 250 ~ 1*6,
+    dists > 1000 | is.na(dists) ~ 0, 
+    str_detect(CATGRPGIS, "DG") & dists >= 750 & dists <= 1000 ~ 0.1*6,
+    str_detect(CATGRPGIS, "DG") & dists >= 500 & dists < 750 ~ 0.25*6,
+    str_detect(CATGRPGIS, "DG") & dists >= 250 & dists < 500 ~ 0.5*6,
+    str_detect(CATGRPGIS, "DG") & dists < 250 ~ 1*6,
     STATUS == "Active" & 
+      str_detect(CATGRPGIS, "LF") &
       WASTE_TYPE %in% c("ASH", "C&D WASTE", "MSW", "SLUDGE") & 
       dists >= 750 & dists <= 1000 ~ 0.1*8,
     STATUS == "Active" & 
+      str_detect(CATGRPGIS, "LF") &
       WASTE_TYPE %in% c("ASH", "C&D WASTE", "MSW", "SLUDGE") & 
       dists >= 500 & dists < 750 ~ 0.25*8,
     STATUS == "Active" & 
+      str_detect(CATGRPGIS, "LF") &
       WASTE_TYPE %in% c("ASH", "C&D WASTE", "MSW", "SLUDGE") & 
       dists >= 250 & dists < 500 ~ 0.5*8,
     STATUS == "Active" & 
+      str_detect(CATGRPGIS, "LF") &
       WASTE_TYPE %in% c("ASH", "C&D WASTE", "MSW", "SLUDGE") & 
       dists < 250 ~ 1*8,
     STATUS == "Active" & 
+      str_detect(CATGRPGIS, "LF") &
       WASTE_TYPE %in% c("TIRES", "WOODWASTE") & 
       dists >= 750 & dists <= 1000 ~ 0.1*4,
     STATUS == "Active" & 
+      str_detect(CATGRPGIS, "LF") &
       WASTE_TYPE %in% c("TIRES", "WOODWASTE") & 
       dists >= 500 & dists < 750 ~ 0.25*4,
     STATUS == "Active" & 
+      str_detect(CATGRPGIS, "LF") &
       WASTE_TYPE %in% c("TIRES", "WOODWASTE") & 
       dists >= 250 & dists < 500 ~ 0.5*4,
     STATUS == "Active" & 
+      str_detect(CATGRPGIS, "LF") &
       WASTE_TYPE %in% c("TIRES", "WOODWASTE") & 
       dists < 250 ~ 1*4,
     .default = 1
   ))
+# adjust weights by distance for sw points
+sw_pt <- sw_pt %>% 
+  mutate(SWScore = case_when(
+    CLASS_TYPE == "COMBUST" ~ 10,
+    CLASS_TYPE == "COMBUST INACTIVE" ~ 1,
+    CLASS_TYPE %in% c("COMPOST", "CMPOST","GPRECY", "IPRECY", "IPCNVR") ~ 4,
+    CLASS_TYPE %in% c("GPCMPT", "IPCMPT", "SMHNDL", "HF TRANSFER SM") ~ 2,
+    CLASS_TYPE == "GPDGST" ~ 3,
+    CLASS_TYPE %in% c("HF CD PROC", "HF TRANSFER", "LGHNDL") ~ 5,
+    .default = 1
+  ))
 # sum up values by block group
 sw_poly <- sw_poly %>% 
-  select(SWScore) %>% 
+  transmute(SWScorePoly = SWScore) %>% 
   st_join(., ma_blkgrp23) %>% 
   st_drop_geometry(.) %>% 
   group_by(GEOID) %>% 
-  summarize(SWScore = sum(SWScore, na.rm = TRUE)) %>% 
-  mutate(EFFCTpctileSW_POLY = percent_rank(SWScore)*100)
+  summarize(SWScorePoly = sum(SWScorePoly, na.rm = TRUE))
+
+sw_pt <- sw_pt %>% 
+  transmute(SWScorePt = SWScore) %>% 
+  st_join(., ma_blkgrp23) %>% 
+  st_drop_geometry(.) %>% 
+  group_by(GEOID) %>% 
+  summarize(SWScorePt = sum(SWScorePt, na.rm = TRUE))
+
+sw_all <- ma_blkgrp23 %>% 
+  st_drop_geometry(.) %>% 
+  select(GEOID) %>% 
+  full_join(., sw_pt, by = "GEOID") %>% 
+  full_join(., sw_poly, by = "GEOID") %>% 
+  rowwise(.) %>% 
+  mutate(SWScore = sum(c_across(SWScorePt:SWScorePoly), na.rm = TRUE)) %>% 
+  ungroup(.) %>% 
+  mutate(EFFCTpctileSW = percent_rank(SWScore)*100)
 
 
 # Impaired Waters - MassDEP 2022 Integrated List of Waters (305(b)/303(d))
