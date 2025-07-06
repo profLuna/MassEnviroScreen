@@ -137,12 +137,18 @@ myocardio_cosub <- read_xlsx("data/MADPH/MyoCardioInfarchospitalization2017_21pe
   mutate(`Age Adjusted Rate` = as.numeric(`Age Adjusted Rate`),
          SPpctileMYOC = percent_rank(`Age Adjusted Rate`)*100)
 
-# load ejscreen low life expectancy variable, although note that original data for that metric comes at tract level from Life Expectancy at Birth from CDC, National Center for Health Statistics https://www.cdc.gov/nchs/data-visualization/life-expectancy/index.html
-life_blkgrp <- read_csv("data/EJSCREEN24/EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_VI.csv") %>% 
-  filter(ST_ABBREV == "MA") %>% 
-  select(ID, P_LIFEEXPPCT) %>% 
-  rename_with(~str_remove(., "P_"), .cols = P_LIFEEXPPCT) %>% 
-  rename_with(~str_c("SPpctile", .), .cols = LIFEEXPPCT)
+# # load ejscreen low life expectancy variable, although note that original data for that metric comes at tract level from Life Expectancy at Birth from CDC, National Center for Health Statistics https://www.cdc.gov/nchs/data-visualization/life-expectancy/index.html
+# life_blkgrp <- read_csv("data/EJSCREEN24/EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_VI.csv") %>% 
+#   filter(ST_ABBREV == "MA") %>% 
+#   select(ID, P_LIFEEXPPCT) %>% 
+#   rename_with(~str_remove(., "P_"), .cols = P_LIFEEXPPCT) %>% 
+#   rename_with(~str_c("SPpctile", .), .cols = LIFEEXPPCT)
+
+# load MADPH premature mortality rate and confirmed elevated blood levels by census tract. Average Annual Prevalence of Males and Females with estimated confirmed blood lead levels >= 5 micrograms/decilieter in 2019 - 2023 that were between 9 and less than 48 months of age. Acquired from MassDEP Cumulative Impact Analysis in Air Quality Permitting at https://www.mass.gov/info-details/cumulative-impact-analysis-in-air-quality-permitting#cia-guidance-and-tools-
+DEP_BLL_life_tract <- read_xlsx("data/DEP/Indicator data for cumulative impact analysis UPDATED Jan 2025.xlsx", skip = 1, sheet = "Indicators by Tract") %>% 
+  transmute(GEOID_TRACT = Tract, 
+            SPpctileBLL = `Elevated  Blood Lead\r\r\n\r\r\n(%tile)`,
+            SPpctileLIFEEXPPCT = `PMR\r\r\n(%tile)`)
 
 
 ## Environmental Exposure Indicators
@@ -723,7 +729,7 @@ flood <- bind_rows(NFHL, Q3) %>%
   st_drop_geometry(.) %>%
   group_by(GEOID) %>% 
   summarize(fldArea = sum(fldArea))
-# compute percent flood area by block group for NFHL and Q3
+# aggregate to block group polygons for NFHL and Q3
 flood <- ma_blkgrp23 %>% 
   transmute(GEOID = GEOID,
             Area = as.numeric(st_area(.))) %>% 
@@ -765,7 +771,9 @@ MassEnviroScreen <- ma_blkgrp23 %>%
   left_join(., select(lbw_cosub, City, SPpctileLBW), by = c("COSUB" = "City")) %>% 
   left_join(., select(asthma_cosub, Geography, SPpctileASTHMAped), 
             by = c("COSUB" = "Geography")) %>% 
-  left_join(., life_blkgrp, by = c("GEOID" = "ID")) %>% 
+  # left_join(., life_blkgrp, by = c("GEOID" = "ID")) %>% 
+  left_join(., select(DEP_BLL_life_tract, GEOID_TRACT, SPpctileBLL, SPpctileLIFEEXPPCT),
+            by = "GEOID_TRACT") %>% 
   left_join(., select(ma_blkgrp23HS, GEOID, SEpctileHS), by = "GEOID") %>% 
   left_join(., select(hhburden, geoid2, SEpctileHHB), by = c("GEOID_TRACT" = "geoid2")) %>% 
   left_join(., select(ma_blkgrp23language, GEOID, SEpctileLEP), by = "GEOID") %>% 
