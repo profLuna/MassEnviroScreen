@@ -1,14 +1,6 @@
 # Generate MassEnviroScreen modeled on CalEnviroScreen
 # load necessary libraries
 pacman::p_load(tidyverse, tidycensus, sf, tigris, readxl, foreign, nngeo, terra)
-# library(tidyverse)
-# library(sf)
-# library(tidycensus)
-# library(tigris)
-# library(readxl)
-# library(foreign)
-# library(nngeo) # to calculate nearest neighbor
-# library(terra)
 options(tigris_use_cache = TRUE)
 
 ## Generate socioeconomic factor indicators
@@ -711,22 +703,38 @@ fire <- rast("data/USDA/Data/whp2023_GeoTIF/whp2023_cls_conus.tif") %>%
   st_drop_geometry(.)
 
 # Flood risk. The area of all features with 1% Annual Chance Flood Hazard within a geographic area divided by the total area of the geographic area. If no flood areas were found within the geographic area, a value of zero was used. MassGIS https://www.mass.gov/info-details/massgis-data-fema-national-flood-hazard-layer
-flood <- st_read("data/MASSGIS/FEMA_NFHL_POLY.shp") %>% 
-  filter(FLD_ZONE %in% c("A", "AE", "AH", "AO", "VE")) %>% 
+# Note that NFHL DFIRMs are not available for entire northwest quadrant of the state. Need to use Q3 data to supplement. Franklin County is not available in either dataset as of July 2025, so supplement for Franklin County with "riverine flooding - exposure - impacted area" from FEMA NRI at census tract level, downscaled to block groups. 
+NFHL <- st_read("data/MASSGIS/FEMA_NFHL_POLY.shp") %>% 
+  select(FLD_ZONE) %>% 
+  filter(FLD_ZONE %in% c("A", "AE", "AH", "AO", "VE"))
+Q3 <- st_read("data/MASSGIS/", "Q3FLOOD_POLY_NO_NFHL") %>% 
+  filter(ZONE %in% c("AE", "A", "D", "AO")) %>% 
+  transmute(FLD_ZONE = ZONE)
+NRI <- st_read("data/FEMA/NRI_GDB_CensusTracts.gdb", "NRI_CensusTracts") %>% 
+  filter(STATE == "Massachusetts" & COUNTY == "Franklin") %>% 
+  transmute(GEOID_TRACT = TRACTFIPS, Area = AREA, fldArea = RFLD_EXP_AREA) %>% 
+  st_drop_geometry(.) %>% 
+  inner_join(ma_blkgrp23, ., by = "GEOID_TRACT") %>% 
+  select(GEOID, Area, fldArea)
+# bind NFHL and Q3 together and intersect with block groups
+flood <- bind_rows(NFHL, Q3) %>% 
   st_intersection(., ma_blkgrp23) %>% 
   mutate(fldArea = as.numeric(st_area(.))) %>% 
-  st_drop_geometry(.) %>% 
+  st_drop_geometry(.) %>%
   group_by(GEOID) %>% 
   summarize(fldArea = sum(fldArea))
-
+# compute percent flood area by block group for NFHL and Q3
 flood <- ma_blkgrp23 %>% 
   transmute(GEOID = GEOID,
             Area = as.numeric(st_area(.))) %>% 
-  left_join(., flood, by = "GEOID") %>% 
-  replace_na(., list(fldArea = 0)) %>% 
+  inner_join(., flood, by = "GEOID") %>% 
+  replace_na(., list(fldArea = 0))
+# isolate NRI block groups that are not present in flood, bind to flood, and compute pct flood
+flood <- anti_join(NRI, st_drop_geometry(flood), by = "GEOID") %>% 
+  bind_rows(flood, .) %>% 
+  st_drop_geometry(.) %>%
   mutate(pctFldArea = fldArea/Area*100,
-         CLIMpctilFLD = percent_rank(pctFldArea)*100) %>% 
-  st_drop_geometry(.)
+         CLIMpctilFLD = percent_rank(pctFldArea)*100)
 
 # Heat. Average number of days between May and September from 2019 through 2023 in which daily high temperature exceeded the 90th percentile of historical daily high temperatures. Data Source: National Environmental Public Health Tracking Network via the U.S. Centers for Disease Control (CDC), Heat & Heat Related Illness (HRI), Historical Temperature & Heat Index, 2019-2023 https://ephtracking.cdc.gov/ . Query: Heat & Health-Related Illness (HRI > Historical Temperature & Heat Index > Annual Number of Extreme Heat Days > MA Census Tracts > 2019 - 2023 > Heat Metric Max Daily Temp > Relative Threshold 90th Percentile)
 heat <- read_csv("data/CDC/data_134739.csv") %>% 
