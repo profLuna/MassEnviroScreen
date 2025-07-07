@@ -293,7 +293,7 @@ Within the MassEnviroScreen score map, clicking on individual census block group
 
 ### Model indicators
 
-The MassEnviroScreen score model is computed from 28 statewide environmental, socioeconomic, and health indicators. These indicators are listed in @tbl-indicators below. Details and data sources for model indicators can be found in the [MassEnviroScreen Indicators glossary](MassEnviroScreenIndicatorsGlossary.pdf).
+The MassEnviroScreen score model is computed from 28 statewide environmental, socioeconomic, and health indicators. These indicators are listed in @tbl-indicators below. Details and data sources for model indicators can be found in the [MassEnviroScreen Documentation](MassEnviroScreenDocumentation.pdf).
 
 ```{r}
 #| echo: false
