@@ -146,7 +146,7 @@ myocardio_cosub <- read_xlsx("data/MADPH/MyoCardioInfarchospitalization2017_21pe
 
 # load MADPH premature mortality rate and confirmed elevated blood levels by census tract. Average Annual Prevalence of Males and Females with estimated confirmed blood lead levels >= 5 micrograms/decilieter in 2019 - 2023 that were between 9 and less than 48 months of age. Acquired from MassDEP Cumulative Impact Analysis in Air Quality Permitting at https://www.mass.gov/info-details/cumulative-impact-analysis-in-air-quality-permitting#cia-guidance-and-tools-
 DEP_BLL_life_tract <- read_xlsx("data/DEP/Indicator data for cumulative impact analysis UPDATED Jan 2025.xlsx", skip = 1, sheet = "Indicators by Tract") %>% 
-  transmute(GEOID_TRACT = Tract, 
+  transmute(GEOID_TRACT = as.character(Tract), 
             SPpctileBLL = `Elevated  Blood Lead\r\r\n\r\r\n(%tile)`,
             SPpctileLIFEEXPPCT = `PMR\r\r\n(%tile)`)
 
@@ -764,7 +764,7 @@ MassEnviroScreen <- ma_blkgrp23 %>%
   left_join(., select(USTreleases, GEOID, EFFCTpctileUST), by = "GEOID") %>% 
   left_join(., select(GWP, GEOID, EFFCTpctileGWP ), by = "GEOID") %>% 
   left_join(., select(BWPMAJOR_PT, GEOID, EFFCTpctileBWPMAJOR_PT), by = "GEOID") %>% 
-  left_join(., select(sw_poly, GEOID, EFFCTpctileSW_POLY), by = "GEOID") %>% 
+  left_join(., select(sw_all, GEOID, EFFCTpctileSW), by = "GEOID") %>% 
   left_join(., select(IL_sum, GEOID, EFFCTpctileIL), by = "GEOID") %>% 
   left_join(., select(health_tract, LocationID, SPpctileHPRSSR, SPpctileCANCER),
             by = c("GEOID_TRACT" = "LocationID")) %>% 
