@@ -293,7 +293,7 @@ Within the MassEnviroScreen score map, clicking on individual census block group
 
 ### Model indicators
 
-The MassEnviroScreen score model is computed from 27 statewide environmental, socioeconomic, and health indicators. These indicators are listed in @tbl-indicators below. Details and data sources for model indicators can be found in the [MassEnviroScreen Indicators glossary](MassEnviroScreenIndicatorsGlossary.pdf).
+The MassEnviroScreen score model is computed from 28 statewide environmental, socioeconomic, and health indicators. These indicators are listed in @tbl-indicators below. Details and data sources for model indicators can be found in the [MassEnviroScreen Indicators glossary](MassEnviroScreenIndicatorsGlossary.pdf).
 
 ```{r}
 #| echo: false
@@ -325,8 +325,9 @@ df <- data.frame(`Environmental Exposures` = c("PM2.5",
                                              "Adult High Blood Pressure",
                                              "Adult Cancer",
                                              "Low Birth Weight Infants",
-                                             "Low Life Expectancy",
-                                             "","",""),
+                                             "Elevated Blood Lead Levels in Children",
+                                             "Premature Mortality",
+                                             "",""),
                  `Socioeconomic Factors` = c("Adults without a High School degree",
                                              "Housing Burdened Low Income Households",
                                              "Linguistic Isolation",
@@ -361,7 +362,7 @@ Under the current Massachusetts Environmental Justice Population definition `{r}
 
 ### Overlap with EJ criteria
 
-Although MassEnviroScreen identifies a smaller number of census block groups, there is considerable overlap between communities meeting the state's current environmental justice population definition and the criteria for disadvantaged communities. Although `{r} round(nrow(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",])/nrow(MassEnviroScreen)*100,1)`% of census block groups in the state meet the criteria for disadvantaged communities, `{r}  round(nrow(MassEnviroScreen[(MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None") & MassEnviroScreen$EJ=="Yes",])/nrow(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",])*100,1)`% of block groups defined as environmental justice populations also meet the disadvantaged communities criteria. @fig-EJoverlap shows the degree of overlap between the various criteria of environmental justice populations and disadvantaged communities. There is 100% overlap with all state Environmental Justice Population criteria save for the Minority-only category. Only 34% of census block groups defined as a Environmental Justice Population based solely on the Minority criterion (i.e., 40% or more minority) overlap with disadvantaged communities as defined here.
+Although MassEnviroScreen identifies a smaller number of census block groups, there is considerable overlap between communities meeting the state's current environmental justice population definition and the criteria for disadvantaged communities. Although `{r} round(nrow(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",])/nrow(MassEnviroScreen)*100,1)`% of census block groups in the state meet the criteria for disadvantaged communities, `{r}  round(nrow(MassEnviroScreen[(MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None") & MassEnviroScreen$EJ=="Yes",])/nrow(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",])*100,1)`% of block groups defined as environmental justice populations also meet the disadvantaged communities criteria. @fig-EJoverlap shows the degree of overlap between the various criteria of environmental justice populations and disadvantaged communities. There is 100% overlap with all state Environmental Justice Population criteria save for the Minority-only category. Only 35% of census block groups defined as a Environmental Justice Population based solely on the Minority criterion (i.e., 40% or more minority) overlap with disadvantaged communities as defined here.
 
 ```{r}
 #| echo: false
