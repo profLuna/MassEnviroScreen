@@ -22,9 +22,9 @@ To define "disadvantaged communities" in this tool, cumulative impact scores of 
 ::: {.callout-note appearance="simple"}
 ## Disadvantaged communities are communities (i.e., census block groups) that meet one or more of the following criteria:
 
--   cumulative impact score (i.e, MassEnviroScore) of 75 or greater
--   annual median household income is 65 percent or less of the statewide annual median household income
--   25 percent or more of households identify as speaking English less than "very well"
+-   cumulative impact score (i.e, MassEnviroScore) of 75 or greater, OR
+-   annual median household income is 65 percent or less of the statewide annual median household income, OR
+-   25 percent or more of households identify as speaking English less than "very well," OR
 -   occupy or intersect land within the boundaries of Federally Recognized Tribes
 :::
 
@@ -276,7 +276,7 @@ The MassEnviroScreen cumulative impact score model is based on three components 
 
 The model:
 
--   Uses 27 statewide indicators to characterize both Pollution and Climate Burden and Population Characteristics
+-   Uses 28 statewide indicators to characterize both Pollution and Climate Burden and Population Characteristics
 -   Uses percentiles to assign scores for each of the indicators in a given geographic area. The percentile represents a relative score for the indicators.
 -   Uses a scoring system in which the percentiles are averaged for the set of indicators in each of the four components (Exposures, Environmental Effects, Climate Risks, Sensitive Populations, and Socioeconomic Factors).
 -   Combines the component scores to produce a MassEnviroScreen score for a given place relative to other places in the state, using the formula below.
