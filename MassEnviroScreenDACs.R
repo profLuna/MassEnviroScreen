@@ -19,8 +19,6 @@ MassEnviroScreen <- block_groups(state = "MA", year = 2023, cb = TRUE) %>%
   filter(!st_is_empty(.)) %>% 
   select(GEOID) %>% 
   left_join(., st_drop_geometry(MassEnviroScreen), by = "GEOID") %>% 
-  select(GEOID, COSUB, PollutionBurden10, 
-         PopCharacteristics10, MassEnviroScore) %>% 
   mutate(PollutionBurden100 = PollutionBurden10*10,
          PopCharacteristics100 = PopCharacteristics10*10) %>% 
   select(-PollutionBurden10, -PopCharacteristics10) %>% 
