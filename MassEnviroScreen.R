@@ -801,8 +801,8 @@ MassEnviroScreen <- ma_blkgrp23 %>%
   mutate(PollutionBurden = sum(c(AvgExposure,AvgEffect0_5,AvgClimate0_5), na.rm = TRUE)/2,
          PopCharacteristics = sum(c(AvgSensitivePops,AvgSocioEconFacts), na.rm = TRUE)/2) %>% 
   ungroup() %>% 
-  mutate(PollutionBurden10 = percent_rank(PollutionBurden)*10, # scaled scores, 1 - 10
-         PopCharacteristics10 = percent_rank(PopCharacteristics)*10,
+  mutate(PollutionBurden10 = (PollutionBurden/max(PollutionBurden))*10, # scaled scores, 1 - 10
+         PopCharacteristics10 = (PopCharacteristics/max(PopCharacteristics))*10,
          MassEnviroScoreRaw = PollutionBurden10 * PopCharacteristics10,
          MassEnviroScore = percent_rank(MassEnviroScoreRaw)*100) # scaled final score 1 - 100
 
