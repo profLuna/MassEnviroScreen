@@ -5,7 +5,7 @@ options(tigris_use_cache = TRUE)
 
 ## Generate socioeconomic factor indicators
 # identify census variables to download
-v23 <- load_variables(year = 2023, "acs5", cache = TRUE)
+# v23 <- load_variables(year = 2023, "acs5", cache = TRUE)
 
 # POVERTY STATUS IN THE PAST 12 MONTHS OF PEOPLE IN HOUSING UNITS
 ma_blkgrp23pov <- get_acs(geography = "block group", year = 2023, state = "MA", output = "wide",
@@ -128,14 +128,14 @@ asthma_cosub <- read_csv("data/MADPH/pediatricAsthma2017_23.csv") %>%
   filter(`School Year` %in% c("2017-2018","2022-2023")) %>% 
   mutate(Prevalence = as.numeric(Prevalence)) %>% 
   group_by(Geography) %>% 
-  summarize(Prevalence = mean(Prevalence, na.rm = TRUE)) %>% 
-  mutate(SPpctileASTHMAped = percent_rank(Prevalence)*100)
+  summarize(PedAsthmaPrevalence = mean(Prevalence, na.rm = TRUE)) %>% 
+  mutate(SPpctileASTHMAped = percent_rank(PedAsthmaPrevalence)*100)
 
 # load myocardial infarction from MA Environmental Public Health Tracking. See https://matracking.ehs.state.ma.us/Health-Data/Asthma/index.html
 myocardio_cosub <- read_xlsx("data/MADPH/MyoCardioInfarchospitalization2017_21per10k.xlsx") %>% 
   filter(str_detect(`Geo Description`, " - Average")) %>% 
-  mutate(`Age Adjusted Rate` = as.numeric(`Age Adjusted Rate`),
-         SPpctileMYOC = percent_rank(`Age Adjusted Rate`)*100)
+  mutate(`Myocardio Age Adjusted Rate` = as.numeric(`Age Adjusted Rate`),
+         SPpctileMYOC = percent_rank(`Myocardio Age Adjusted Rate`)*100)
 
 # # load ejscreen low life expectancy variable, although note that original data for that metric comes at tract level from Life Expectancy at Birth from CDC, National Center for Health Statistics https://www.cdc.gov/nchs/data-visualization/life-expectancy/index.html
 # life_blkgrp <- read_csv("data/EJSCREEN24/EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_VI.csv") %>% 
@@ -147,8 +147,10 @@ myocardio_cosub <- read_xlsx("data/MADPH/MyoCardioInfarchospitalization2017_21pe
 # load MADPH premature mortality rate and confirmed elevated blood levels by census tract. Average Annual Prevalence of Males and Females with estimated confirmed blood lead levels >= 5 micrograms/decilieter in 2019 - 2023 that were between 9 and less than 48 months of age. Acquired from MassDEP Cumulative Impact Analysis in Air Quality Permitting at https://www.mass.gov/info-details/cumulative-impact-analysis-in-air-quality-permitting#cia-guidance-and-tools-
 DEP_BLL_life_tract <- read_xlsx("data/DEP/Indicator data for cumulative impact analysis UPDATED Jan 2025.xlsx", skip = 1, sheet = "Indicators by Tract") %>% 
   transmute(GEOID_TRACT = as.character(Tract), 
+            BLL = `Elevated  Blood Lead\r\r\n\r\r\n(per 1000 screened)`,
             SPpctileBLL = `Elevated  Blood Lead\r\r\n\r\r\n(%tile)`,
-            SPpctileLIFEEXPPCT = `PMR\r\r\n(%tile)`)
+            PMR = `PreMature Mortality Rate (PMR) \r\n(pre 100,000 residents)`,
+            SPpctilePMR = `PMR\r\r\n(%tile)`)
 
 
 ## Environmental Exposure Indicators
@@ -158,9 +160,12 @@ DEP_BLL_life_tract <- read_xlsx("data/DEP/Indicator data for cumulative impact a
 # load ejscreen variables with percentile values; create for PRE1960PCT; rename
 ejscreen <- read_csv("data/EJSCREEN24/EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_VI.csv") %>% 
   filter(ST_ABBREV == "MA") %>% 
-  select(ID, P_PM25, P_OZONE, P_DSLPM, P_NO2, P_PTRAF, P_RSEI_AIR, P_DWATER) %>% 
-  rename_with(~str_remove(., "P_"), .cols = P_PM25:P_DWATER) %>% 
-  rename_with(~str_c("EXPpctile", .), .cols = PM25:DWATER)
+  select(ID, PM25, P_PM25, OZONE, P_OZONE, DSLPM, P_DSLPM, NO2, P_NO2, PTRAF, P_PTRAF, RSEI_AIR, 
+         P_RSEI_AIR, DWATER, P_DWATER) %>% 
+  rename_with(function(x) {gsub("P_", "EXPpctile", x)})
+  # select(ID, P_PM25, P_OZONE, P_DSLPM, P_NO2, P_PTRAF, P_RSEI_AIR, P_DWATER) %>% 
+  # rename_with(~str_remove(., "P_"), .cols = P_PM25:P_DWATER) %>% 
+  # rename_with(~str_c("EXPpctile", .), .cols = PM25:DWATER)
 
 # Children's Lead Risk from Housing. Percentage of households within a census tract with likelihood of lead-based paint (LBP) hazards from the age of housing combined with the percentage of households that are both low-income (household income less than 80% of the county median family income) and have children under 6 years old. HERE WE USE HUD CHAS (Comprehensive Housing Affordability Strategy) data at Census tract level. See https://www.huduser.gov/portal/datasets/cp.html DIFFERENT FROM CALENVIROSCREEN METHOD. METRIC HERE IS HOUSING UNIT STRUCTURE BUILT BEFORE 1979 AND LESS THAN 80% HUD area median family income AND CHILDREN 6 OR YOUNGER. 
 blrisk_tract <- read_csv("data/CHAS/140/Table13.csv") %>% 
@@ -755,44 +760,48 @@ heat <- read_csv("data/CDC/data_134739.csv") %>%
 MassEnviroScreen <- ma_blkgrp23 %>% 
   select(GEOID, GEOID_TRACT, COSUB, COUNTYFP) %>% 
   left_join(., ejscreen, by = c("GEOID" = "ID")) %>% 
-  left_join(., select(blrisk_tract, tract, EXPpctileBLRISK), 
+  left_join(., select(blrisk_tract, tract, blrisk, EXPpctileBLRISK), 
             by = c("GEOID_TRACT" = "tract")) %>% 
-  left_join(., select(superfund_poly, GEOID, EFFCTpctileSUPERFUND), by = "GEOID") %>% 
-  left_join(., select(brownfields, GEOID, EFFCTpctileBROWNFIELDS), by = "GEOID") %>% 
-  left_join(., select(C21E_pt, GEOID, EFFCTpctileC21E), by = "GEOID") %>% 
-  left_join(., select(aul_pt, GEOID, EFFCTpctileAUL_PT), by = "GEOID") %>% 
-  left_join(., select(USTreleases, GEOID, EFFCTpctileUST), by = "GEOID") %>% 
-  left_join(., select(GWP, GEOID, EFFCTpctileGWP ), by = "GEOID") %>% 
-  left_join(., select(BWPMAJOR_PT, GEOID, EFFCTpctileBWPMAJOR_PT), by = "GEOID") %>% 
-  left_join(., select(sw_all, GEOID, EFFCTpctileSW), by = "GEOID") %>% 
-  left_join(., select(IL_sum, GEOID, EFFCTpctileIL), by = "GEOID") %>% 
-  left_join(., select(health_tract, LocationID, SPpctileHPRSSR, SPpctileCANCER),
+  left_join(., select(superfund_poly, GEOID, superfundScore, EFFCTpctileSUPERFUND), 
+            by = "GEOID") %>% 
+  left_join(., select(brownfields, GEOID, brownfieldsScore, EFFCTpctileBROWNFIELDS), 
+            by = "GEOID") %>% 
+  left_join(., select(C21E_pt, GEOID, C21E_ptScore, EFFCTpctileC21E), by = "GEOID") %>% 
+  left_join(., select(aul_pt, GEOID, aul_ptScore, EFFCTpctileAUL_PT), by = "GEOID") %>% 
+  left_join(., select(USTreleases, GEOID, USTScore, EFFCTpctileUST), by = "GEOID") %>% 
+  left_join(., select(GWP, GEOID, GWPScore, EFFCTpctileGWP ), by = "GEOID") %>% 
+  left_join(., select(BWPMAJOR_PT, GEOID, BWPScore, EFFCTpctileBWPMAJOR_PT), by = "GEOID") %>% 
+  left_join(., select(sw_all, GEOID, SWScore, EFFCTpctileSW), by = "GEOID") %>% 
+  left_join(., select(IL_sum, GEOID, IL_count, EFFCTpctileIL), by = "GEOID") %>% 
+  left_join(., select(health_tract, LocationID, `High blood pressure among adults`, 
+                      SPpctileHPRSSR, `Cancer (non-skin) or melanoma among adults`, 
+                      SPpctileCANCER),
             by = c("GEOID_TRACT" = "LocationID")) %>% 
-  left_join(., select(lbw_cosub, City, SPpctileLBW), by = c("COSUB" = "City")) %>% 
-  left_join(., select(asthma_cosub, Geography, SPpctileASTHMAped), 
+  left_join(., select(lbw_cosub, City, LBWpct, SPpctileLBW), by = c("COSUB" = "City")) %>% 
+  left_join(., select(asthma_cosub, Geography, PedAsthmaPrevalence, SPpctileASTHMAped), 
             by = c("COSUB" = "Geography")) %>% 
   # left_join(., life_blkgrp, by = c("GEOID" = "ID")) %>% 
-  left_join(., select(DEP_BLL_life_tract, GEOID_TRACT, SPpctileBLL, SPpctileLIFEEXPPCT),
+  left_join(., select(DEP_BLL_life_tract, GEOID_TRACT, BLL, SPpctileBLL, PMR, SPpctilePMR),
             by = "GEOID_TRACT") %>% 
-  left_join(., select(ma_blkgrp23HS, GEOID, SEpctileHS), by = "GEOID") %>% 
-  left_join(., select(hhburden, geoid2, SEpctileHHB), by = c("GEOID_TRACT" = "geoid2")) %>% 
-  left_join(., select(ma_blkgrp23language, GEOID, SEpctileLEP), by = "GEOID") %>% 
-  left_join(., select(ma_blkgrp23pov, GEOID, SEpctilePOV), by = "GEOID") %>% 
-  left_join(., select(ma_blkgrp23employ, GEOID, SEpctileEMP), by = "GEOID") %>% 
-  left_join(., select(drought, CountyFIPS, CLIMpctilDrought), 
+  left_join(., select(ma_blkgrp23HS, GEOID, HSlesspctE, SEpctileHS), by = "GEOID") %>% 
+  left_join(., select(hhburden, geoid2, hhburden, SEpctileHHB), by = c("GEOID_TRACT" = "geoid2")) %>% 
+  left_join(., select(ma_blkgrp23language, GEOID, limitEngpctE, SEpctileLEP), by = "GEOID") %>% 
+  left_join(., select(ma_blkgrp23pov, GEOID, povHHpctE, SEpctilePOV), by = "GEOID") %>% 
+  left_join(., select(ma_blkgrp23employ, GEOID, unemploypctE, SEpctileEMP), by = "GEOID") %>% 
+  left_join(., select(drought, CountyFIPS, droughtSum, CLIMpctilDrought), 
             by = c("COUNTYFP" = "CountyFIPS")) %>% 
-  left_join(., select(fire, GEOID, CLIMpctilWHP), by = "GEOID") %>% 
-  left_join(., select(flood, GEOID, CLIMpctilFLD), by = "GEOID") %>% 
-  left_join(., select(heat, CensusTract, CLIMpctilHEAT), 
+  left_join(., select(fire, GEOID, WHPmean, CLIMpctilWHP), by = "GEOID") %>% 
+  left_join(., select(flood, GEOID, pctFldArea, CLIMpctilFLD), by = "GEOID") %>% 
+  left_join(., select(heat, CensusTract, heatMean, CLIMpctilHEAT), 
             by = c("GEOID_TRACT" = "CensusTract")) %>% 
-  mutate(across(c(EXPpctilePM25:EXPpctileRSEI_AIR, EFFCTpctileSUPERFUND:EFFCTpctileIL), 
+  mutate(across(c(starts_with("EXPpctile"), starts_with("EFFCTpctile")), 
                 ~replace_na(.x, 0))) %>% 
   rowwise() %>% # compute average component scores
-  mutate(AvgExposure = mean(c_across(EXPpctilePM25:EXPpctileBLRISK), na.rm = TRUE),
-         AvgEffect = mean(c_across(EFFCTpctileSUPERFUND:EFFCTpctileIL), na.rm = TRUE),
-         AvgClimate = mean(c_across(CLIMpctilDrought:CLIMpctilHEAT), na.rm = TRUE),
-         AvgSensitivePops = mean(c_across(SPpctileHPRSSR:SPpctileLIFEEXPPCT), na.rm = TRUE),
-         AvgSocioEconFacts = mean(c_across(SEpctileHS:SEpctileEMP), na.rm = TRUE)) %>% 
+  mutate(AvgExposure = mean(c_across(starts_with("EXPpctile")), na.rm = TRUE),
+         AvgEffect = mean(c_across(starts_with("EFFCTpctile")), na.rm = TRUE),
+         AvgClimate = mean(c_across(starts_with("CLIMpctil")), na.rm = TRUE),
+         AvgSensitivePops = mean(c_across(starts_with("SPpctile")), na.rm = TRUE),
+         AvgSocioEconFacts = mean(c_across(starts_with("SEpctile")), na.rm = TRUE)) %>% 
   ungroup() %>% 
   mutate(AvgEffect0_5 = AvgEffect*0.5, # half weight Effect scores
          AvgClimate0_5 = AvgClimate*0.5) %>% # half weight Effect scores
