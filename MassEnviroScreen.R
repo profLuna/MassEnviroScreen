@@ -222,7 +222,8 @@ superfund_poly <- superfund_poly %>%
     dists >= 750 & dists <= 1000 ~ 0.1*12,
     dists >= 500 & dists < 750 ~ 0.25*12,
     dists >= 250 & dists < 500 ~ 0.5*12,
-    dists < 250 ~ 1*12
+    dists < 250 ~ 1*12,
+    .default = 0
   ))
 # sum up values by block group
 superfund_poly <- superfund_poly %>% 
@@ -230,8 +231,7 @@ superfund_poly <- superfund_poly %>%
   st_join(., ma_blkgrp23) %>% 
   st_drop_geometry(.) %>% 
   group_by(GEOID) %>% 
-  summarize(superfundScore = sum(superfundScore, na.rm = TRUE)) %>% 
-  mutate(EFFCTpctileSUPERFUND = percent_rank(superfundScore)*100)
+  summarize(superfundScore = sum(superfundScore, na.rm = TRUE))
 
 # Load Brownfields from EPA ACRES
 # brownfields <- read_csv("data/EPA/Brownfield Properties (ACRES).csv") %>% 
@@ -255,7 +255,8 @@ brownfields <- brownfields %>%
     dists >= 750 & dists <= 1000 ~ 0.1*4,
     dists >= 500 & dists < 750 ~ 0.25*4,
     dists >= 250 & dists < 500 ~ 0.5*4,
-    dists < 250 ~ 1*4
+    dists < 250 ~ 1*4,
+    .default = 1
   ))
 # sum up values by block group
 brownfields <- brownfields %>% 
@@ -263,8 +264,7 @@ brownfields <- brownfields %>%
   st_join(., ma_blkgrp23) %>% 
   st_drop_geometry(.) %>% 
   group_by(GEOID) %>% 
-  summarize(brownfieldsScore = sum(brownfieldsScore, na.rm = TRUE)) %>% 
-  mutate(EFFCTpctileBROWNFIELDS = percent_rank(brownfieldsScore)*100)
+  summarize(brownfieldsScore = sum(brownfieldsScore, na.rm = TRUE))
 
 
 # load MA DEP 21E sites
@@ -288,7 +288,8 @@ C21E_pt <- C21E_pt %>%
     dists >= 750 & dists <= 1000 ~ 0.1*12,
     dists >= 500 & dists < 750 ~ 0.25*12,
     dists >= 250 & dists < 500 ~ 0.5*12,
-    dists < 250 ~ 1*12
+    dists < 250 ~ 1*12,
+    .default = 1
   ))
 # sum up values by block group
 C21E_pt <- C21E_pt %>% 
@@ -296,8 +297,7 @@ C21E_pt <- C21E_pt %>%
   st_join(., ma_blkgrp23) %>% 
   st_drop_geometry(.) %>% 
   group_by(GEOID) %>% 
-  summarize(C21E_ptScore = sum(C21E_ptScore, na.rm = TRUE)) %>% 
-  mutate(EFFCTpctileC21E = percent_rank(C21E_ptScore)*100)
+  summarize(C21E_ptScore = sum(C21E_ptScore, na.rm = TRUE))
 
 
 # load MA DEP AUL sites
@@ -340,10 +340,16 @@ aul_pt <- aul_pt %>%
   st_join(., ma_blkgrp23) %>% 
   st_drop_geometry(.) %>% 
   group_by(GEOID) %>% 
-  summarize(aul_ptScore = sum(aul_ptScore, na.rm = TRUE)) %>% 
-  mutate(EFFCTpctileAUL_PT = percent_rank(aul_ptScore)*100)
+  summarize(aul_ptScore = sum(aul_ptScore, na.rm = TRUE))
 
-
+# bring pollution cleanup sites together
+cleanup_all <- full_join(superfund_poly, brownfields, by = "GEOID") %>% 
+  full_join(C21E_pt, by = "GEOID") %>% 
+  full_join(aul_pt, by = "GEOID") %>% 
+  rowwise() %>% 
+  mutate(cleanup_score = sum(c_across(ends_with("Score")), na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  mutate(EFFCTpctileCleanup = percent_rank(cleanup_score)*100)
 
 
 ## Groundwater Threats: Land disposal sites, LUSTs, cleanup sites, dairy CAFOs
@@ -387,8 +393,7 @@ USTreleases <- USTreleases %>%
   st_join(., ma_blkgrp23) %>% 
   st_drop_geometry(.) %>% 
   group_by(GEOID) %>% 
-  summarize(USTScore = sum(USTScore, na.rm = TRUE)) %>% 
-  mutate(EFFCTpctileUST = percent_rank(USTScore)*100)
+  summarize(USTScore = sum(USTScore, na.rm = TRUE))
 
 # MA DEP Groundwater Discharge Permits
 # download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/gwp.zip", "data/MASSGIS/gwp.zip")
@@ -420,8 +425,14 @@ GWP <- GWP %>%
   st_join(., ma_blkgrp23) %>% 
   st_drop_geometry(.) %>% 
   group_by(GEOID) %>% 
-  summarize(GWPScore = sum(GWPScore, na.rm = TRUE)) %>% 
-  mutate(EFFCTpctileGWP = percent_rank(GWPScore)*100)
+  summarize(GWPScore = sum(GWPScore, na.rm = TRUE))
+
+# bring groundwater threats together
+gwater_all <- left_join(USTreleases, GWP, by = "GEOID") %>% 
+  rowwise() %>% 
+  mutate(gwater_score = sum(c_across(ends_with("Score")), na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  mutate(EFFCTpctileGrndWater = percent_rank(gwater_score)*100)
 
 
 # Hazardous Waste - MA DEP Major Facilities
@@ -762,14 +773,8 @@ MassEnviroScreen <- ma_blkgrp23 %>%
   left_join(., ejscreen, by = c("GEOID" = "ID")) %>% 
   left_join(., select(blrisk_tract, tract, blrisk, EXPpctileBLRISK), 
             by = c("GEOID_TRACT" = "tract")) %>% 
-  left_join(., select(superfund_poly, GEOID, superfundScore, EFFCTpctileSUPERFUND), 
-            by = "GEOID") %>% 
-  left_join(., select(brownfields, GEOID, brownfieldsScore, EFFCTpctileBROWNFIELDS), 
-            by = "GEOID") %>% 
-  left_join(., select(C21E_pt, GEOID, C21E_ptScore, EFFCTpctileC21E), by = "GEOID") %>% 
-  left_join(., select(aul_pt, GEOID, aul_ptScore, EFFCTpctileAUL_PT), by = "GEOID") %>% 
-  left_join(., select(USTreleases, GEOID, USTScore, EFFCTpctileUST), by = "GEOID") %>% 
-  left_join(., select(GWP, GEOID, GWPScore, EFFCTpctileGWP ), by = "GEOID") %>% 
+  left_join(., select(cleanup_all, GEOID, cleanup_score, EFFCTpctileCleanup)) %>% 
+  left_join(., select(gwater_all, GEOID, gwater_score, EFFCTpctileGrndWater)) %>% 
   left_join(., select(BWPMAJOR_PT, GEOID, BWPScore, EFFCTpctileBWPMAJOR_PT), by = "GEOID") %>% 
   left_join(., select(sw_all, GEOID, SWScore, EFFCTpctileSW), by = "GEOID") %>% 
   left_join(., select(IL_sum, GEOID, IL_count, EFFCTpctileIL), by = "GEOID") %>% 
