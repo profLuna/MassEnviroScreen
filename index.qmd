@@ -15,12 +15,12 @@ This document presents a tool for identifying or prioritizing the most environme
 
 This tool - MassEnviroScreen - is a hybrid approach that utilizes elements of the current [Massachusetts Environmental Justice Population definition](https://www.mass.gov/info-details/environmental-justice-populations-in-massachusetts), the presence of [federally recognized tribal lands](https://biamaps.geoplatform.gov/biatracts/), and a cumulative impact mapping approach. The cumulative impacts mapping approach is modeled on those used by [California EPA's CalEnviroScreen tool](https://oehha.ca.gov/calenviroscreen) and the [Colorado EnviroScreen tool](https://www.cohealthmaps.dphe.state.co.us/COEnviroscreen_2/). The California and Colorado tools utilize a 'cumulative impact score' to describe the relative environmental burden of communities across the state and to prioritize those that are most burdened. California defines cumulative impacts as "the exposures, public health or environmental effects from the combined emissions and discharges, in a geographic area, including environmental pollution from all sources, whether single or multi-media, routinely, accidentally, or otherwise released." Impacts consider “sensitive populations and socio-economic factors, where applicable and to the extent data are available.” The Colorado tool augments the CalEnviroScreen approach by adding climate risks, which is the approach followed here.
 
-A 'cumulative impact score' is a numerical value that ranks every community (i.e., census block group) on a scale from 0 to 100. Higher values indicate greater cumulative burden. These values also represent percentile ranks, which means that a community's score also indicates the percentage of scores in a group that are equal to or lower than a given score. For example, a census block group with a score of 50 (50th percentile) means that its cumulative impact score is equal to or higher than 50% of census block groups in the state. In this model, we follow California's example of using a score of 75 (the 75th percentile) as one of the thresholds for identifying the most impacted or 'disadvantaged communities.' Census block groups with a minimum score of 75 experience cumulative impacts that are equal to or higher than 75% of block groups in the state. In other words, these block group represent the top 25% of cumulative impact scores in Massachusetts.
+A 'cumulative impact score' is a numerical value that ranks every community (i.e., census block group) on a scale from 0 to 100. Higher values indicate greater cumulative burden. These values also represent percentile ranks, which means that a community's score also indicates the percentage of scores in a group that are equal to or lower than a given score. For example, a census block group with a score of 50 (50th percentile) means that its cumulative impact score is equal to or higher than 50% of census block groups in the state. In this model, we follow California's example of using a score of 75 (the 75th percentile) as one of the thresholds for identifying the most impacted or 'Unfairly Burdened Areas.' Census block groups with a minimum score of 75 experience cumulative impacts that are equal to or higher than 75% of block groups in the state. In other words, these block group represent the top 25% of cumulative impact scores in Massachusetts.
 
-To define "disadvantaged communities" in this tool, cumulative impact scores of 75 or higher are combined with two of the [existing Massachusetts EJ criteria](https://www.mass.gov/info-details/environmental-justice-populations-in-massachusetts) - limited English speaking households and low income - as well as the presence of federally-recognized tribal territory.
+To define "Unfairly Burdened Areas" in this tool, cumulative impact scores of 75 or higher are combined with two of the [existing Massachusetts EJ criteria](https://www.mass.gov/info-details/environmental-justice-populations-in-massachusetts) - limited English speaking households and low income - as well as the presence of federally-recognized tribal territory.
 
 ::: {.callout-note appearance="simple"}
-## Disadvantaged communities are communities (i.e., census block groups) that meet one or more of the following criteria:
+## Unfairly Burdened Areas are communities (i.e., census block groups) that meet one or more of the following criteria:
 
 -   cumulative impact score (i.e, MassEnviroScore) of 75 or greater, OR
 -   annual median household income is 65 percent or less of the statewide annual median household income, OR
@@ -28,7 +28,7 @@ To define "disadvantaged communities" in this tool, cumulative impact scores of 
 -   occupy or intersect land within the boundaries of Federally Recognized Tribes
 :::
 
-@fig-map is an interactive map that displays 'disadvantaged communities' (census block groups in red), as defined above. Click on a block group to see its MassEnviroScreen score and the subscores (described in more detail later in the document) that comprise that cumulative burden, as well as other details. [Text in red]{style="color:white;background-color:#FF0000"} indicates a criterion's threshold is exceeded or met. [Text in blue]{style="color:white;background-color:#053061"} indicates a criterion's threshold is not exceeded or met. Select the checkbox next to 'MA EJ Populations' (upper right corner) to compare these disadvantaged communities with block groups identified as Environmental Justice Populations under Massachusetts law. Finally, activate the 'MassEnviroScore' radio button to see cumulative impact scores for every census block group across the state.
+@fig-map is an interactive map that displays 'Unfairly Burdened Areas' (census block groups in red), as defined above. Click on a block group to see its MassEnviroScreen score and the subscores (described in more detail later in the document) that comprise that cumulative burden, as well as other details. [Text in red]{style="color:white;background-color:#FF0000"} indicates a criterion's threshold is exceeded or met. [Text in blue]{style="color:white;background-color:#053061"} indicates a criterion's threshold is not exceeded or met. Select the checkbox next to 'MA EJ Populations' (upper right corner) to compare these Unfairly Burdened Areas with block groups identified as Environmental Justice Populations under Massachusetts law. Finally, activate the 'MassEnviroScore' radio button to see cumulative impact scores for every census block group across the state.
 
 ```{r}
 #| echo: false
@@ -43,40 +43,40 @@ options(tigris_use_cache = TRUE)
 # read in MassEnviroScreen data from MassEnviroScreen.R
 MassEnviroScreen <- readRDS("MassEnviroScreen.rds")
 
-# read in MA EJ population data from MA EJ Block Groups.R
-MA_EJ23 <- readRDS("ma_blkgrpEJ23.rds")
+# # read in MA EJ population data from MA EJ Block Groups.R
+# MA_EJ23 <- readRDS("ma_blkgrpEJ23.rds")
 
-# read in federally recognized tribal lands Land Area Representations from https://data.nativeland.info/ne/dataset/bureau-of-indian-affairs-land-area-representations
-BIA <- st_read("data/BIA/bia_national_lar", "BIA_National_LAR", quiet = TRUE) %>% 
-  select(LARName) %>% 
-  st_make_valid(.)
-
-# Use clean geometry for block groups and a join MA EJ pop data
-MassEnviroScreen <- block_groups(state = "MA", year = 2023, cb = TRUE) %>% 
-  filter(!st_is_empty(.)) %>% 
-  select(GEOID) %>% 
-  left_join(., st_drop_geometry(MassEnviroScreen), by = "GEOID") %>% 
-  select(GEOID, COSUB, PollutionBurden10, 
-         PopCharacteristics10, MassEnviroScore) %>% 
-  mutate(PollutionBurden100 = PollutionBurden10*10,
-         PopCharacteristics100 = PopCharacteristics10*10) %>% 
-  select(-PollutionBurden10, -PopCharacteristics10) %>% 
-  st_transform("+proj=longlat +datum=WGS84") %>% 
-  left_join(., MA_EJ23, by = "GEOID") %>% 
-  st_join(., st_transform(BIA, crs = st_crs(.))) %>% 
-  replace_na(list(LARName = "None")) %>% 
-  mutate(popMES = if_else(MassEnviroScore >= 75, 
-                          "<b style=\"color:white;background-color:#FF0000;\">MassEnviroScore:</b> ",
-                          "<b style=\"color:white;background-color:#053061;\">MassEnviroScore:</b> "),
-         popMHI = if_else(medHHincMAPCT <= 65,
-                          "<b style=\"color:white;background-color:#FF0000;\">Median Household Income:</b> ",
-                          "<b style=\"color:white;background-color:#053061;\">Median Household Income:</b> "),
-         popLEP = if_else(limitEngpctE >= 25,
-                          "<b style=\"color:white;background-color:#FF0000;\">Limited English Households:</b> ",
-                          "<b style=\"color:white;background-color:#053061;\">Limited English Households:</b> "),
-         popLAR = if_else(LARName != "None",
-                          "<b style=\"color:white;background-color:#FF0000;\">Tribal Territory:</b> ",
-                          "<b style=\"color:white;background-color:#053061;\">Tribal Territory:</b> "))
+# # read in federally recognized tribal lands Land Area Representations from https://data.nativeland.info/ne/dataset/bureau-of-indian-affairs-land-area-representations
+# BIA <- st_read("data/BIA/bia_national_lar", "BIA_National_LAR", quiet = TRUE) %>% 
+#   select(LARName) %>% 
+#   st_make_valid(.)
+# 
+# # Use clean geometry for block groups and a join MA EJ pop data
+# MassEnviroScreen <- block_groups(state = "MA", year = 2023, cb = TRUE) %>% 
+#   filter(!st_is_empty(.)) %>% 
+#   select(GEOID) %>% 
+#   left_join(., st_drop_geometry(MassEnviroScreen), by = "GEOID") %>% 
+#   select(GEOID, COSUB, PollutionBurden10, 
+#          PopCharacteristics10, MassEnviroScore) %>% 
+#   mutate(PollutionBurden100 = PollutionBurden10*10,
+#          PopCharacteristics100 = PopCharacteristics10*10) %>% 
+#   select(-PollutionBurden10, -PopCharacteristics10) %>% 
+#   st_transform("+proj=longlat +datum=WGS84") %>% 
+#   left_join(., MA_EJ23, by = "GEOID") %>% 
+#   st_join(., st_transform(BIA, crs = st_crs(.))) %>% 
+#   replace_na(list(LARName = "None")) %>% 
+#   mutate(popMES = if_else(MassEnviroScore >= 75, 
+#                           "<b style=\"color:white;background-color:#FF0000;\">MassEnviroScore:</b> ",
+#                           "<b style=\"color:white;background-color:#053061;\">MassEnviroScore:</b> "),
+#          popMHI = if_else(medHHincMAPCT <= 65,
+#                           "<b style=\"color:white;background-color:#FF0000;\">Median Household Income:</b> ",
+#                           "<b style=\"color:white;background-color:#053061;\">Median Household Income:</b> "),
+#          popLEP = if_else(limitEngpctE >= 25,
+#                           "<b style=\"color:white;background-color:#FF0000;\">Limited English Households:</b> ",
+#                           "<b style=\"color:white;background-color:#053061;\">Limited English Households:</b> "),
+#          popLAR = if_else(LARName != "None",
+#                           "<b style=\"color:white;background-color:#FF0000;\">Tribal Territory:</b> ",
+#                           "<b style=\"color:white;background-color:#053061;\">Tribal Territory:</b> "))
 
 # read in county subdivisions
 ma_cosubs <- county_subdivisions(state = "MA", cb = TRUE, year = 2023) %>% 
@@ -86,7 +86,7 @@ ma_cosubs <- county_subdivisions(state = "MA", cb = TRUE, year = 2023) %>%
 MA_EJ23 <- MassEnviroScreen %>% 
   filter(EJ == "Yes")
 
-# create Disadvantaged Communities layer from MassEnviroScreen scores
+# create Unfairly Burdened Areas layer from MassEnviroScreen scores
 MassEnviroScreen75 <- MassEnviroScreen %>% 
   filter(MassEnviroScore >= 75 | 
            medHHincMAPCT <= 65 | 
@@ -110,9 +110,9 @@ MESpal <- colorNumeric(palette = rampcols,
                        na.color = NA)
 
 # Create popup. NOTE THAT POPUP AND PALETTE MUST BE CREATED FROM EXACT SAME DF AS USED IN leaflet() MAP. OTHERWISE, POPUPS WILL SHOW UP IN THE WRONG LOCATION!
-# create popups for disadvantaged communities
+# create popups for Unfairly Burdened Areas
 MES75PopUp <- paste0(MassEnviroScreen75$NAME, "<br/>",
-                      "<b>Town:</b> ", MassEnviroScreen75$MUNI, "<br/>",
+                      "<b>Town:</b> ", MassEnviroScreen75$COSUB, "<br/>",
                       MassEnviroScreen75$popMES, round(MassEnviroScreen75$MassEnviroScore,1), "<br/>",
                       "<b>Pollution and Climate Burden SubScore:</b> ", round(MassEnviroScreen75$PollutionBurden100,1), "<br/>",
                      "<b>Sensitive Pop SubScore:</b> ", round(MassEnviroScreen75$PopCharacteristics100,1), "<br/>",
@@ -124,7 +124,7 @@ MES75PopUp <- paste0(MassEnviroScreen75$NAME, "<br/>",
 
 # repeat for MA EJ layer. if MA EJ block group is below 75th percentile, make label color for MassEnviroScore green. 
 MAEJpopup <- paste0(MA_EJ23$NAME, "<br/>",
-                      "<b>Town:</b> ", MA_EJ23$MUNI, "<br/>",
+                      "<b>Town:</b> ", MA_EJ23$COSUB, "<br/>",
                       MA_EJ23$popMES, round(MA_EJ23$MassEnviroScore,1), "<br/>",
                       "<b>Pollution and Climate Burden SubScore:</b> ", round(MA_EJ23$PollutionBurden100,1), "<br/>",
                      "<b>Sensitive Pop SubScore:</b> ", round(MA_EJ23$PopCharacteristics100,1), "<br/>",
@@ -136,7 +136,7 @@ MAEJpopup <- paste0(MA_EJ23$NAME, "<br/>",
 
 # repeat for MassEnviroScore layer. if block group is below 75th percentile, make label text color for MassEnviroScore green. 
 MESscorePopup <- paste0(MassEnviroScreen$NAME, "<br/>",
-                      "<b>Town:</b> ", MassEnviroScreen$MUNI, "<br/>",
+                      "<b>Town:</b> ", MassEnviroScreen$COSUB, "<br/>",
                       MassEnviroScreen$popMES, round(MassEnviroScreen$MassEnviroScore,1), "<br/>",
                       "<b>Pollution and Climate Burden SubScore:</b> ", round(MassEnviroScreen$PollutionBurden100,1), "<br/>",
                      "<b>Sensitive Pop SubScore:</b> ", round(MassEnviroScreen$PopCharacteristics100,1), "<br/>",
@@ -178,7 +178,7 @@ leaflet() %>%
                 dashArray = "",
                 fillOpacity = 0.7,
                 bringToFront = TRUE),
-              label = ~MUNI,
+              label = ~COSUB,
               popup = MAEJpopup,
               group = "MA EJ Populations") %>% 
   addPolygons(data = MassEnviroScreen75, 
@@ -195,7 +195,7 @@ leaflet() %>%
               color = "yellow",
               label = ~COSUB,
               popup = MES75PopUp,
-              group = "Disadvantaged Communities") %>% 
+              group = "Unfairly Burdened Areas") %>% 
   addPolygons(data = MassEnviroScreen, 
               fillColor = ~MESpal(MassEnviroScore), 
               fillOpacity = 0.5,
@@ -214,7 +214,7 @@ leaflet() %>%
               group = "MassEnviroScore") %>% 
   addLayersControl(
     # baseGroups are toggle radio buttons; only 1 at at time
-    baseGroups = c("Disadvantaged Communities", "MassEnviroScore"),
+    baseGroups = c("Unfairly Burdened Areas", "MassEnviroScore"),
     # overlayGroups are checkbox layers that can all be on or off
     overlayGroups = c("MA EJ Populations", "city/town boundary"),
     options = layersControlOptions(
@@ -225,8 +225,8 @@ leaflet() %>%
             colors = "red", 
             opacity = 0.5,
             title = "MassEnviroScreen",
-            labels = "Disadvantaged Communities",
-            layerId = "Disadvantaged Communities") %>% 
+            labels = "Unfairly Burdened Areas",
+            layerId = "Unfairly Burdened Areas") %>% 
   addLegend(position = "bottomright",  
             pal = MESpal, 
             values = MassEnviroScreen$MassEnviroScore,
@@ -244,7 +244,7 @@ leaflet() %>%
   # A hack to have the legends associated with radio-button "Base Groups" in R leaflet maps toggle along with layers. see https://gist.github.com/noamross/98c2053d81085517e686407096ec0a69
   htmlwidgets::onRender("
     function(el, x) {
-      var initialLegend = 'Disadvantaged Communities' // Set the initial legend to be displayed by layerId
+      var initialLegend = 'Unfairly Burdened Areas' // Set the initial legend to be displayed by layerId
       var myMap = this;
       for (var legend in myMap.controls._controlsById) {
         var el = myMap.controls.get(legend.toString())._container;
@@ -351,18 +351,18 @@ df %>%
 There are several key differences between the MassEnviroScreen model approach and the Massachusetts Environmental Justice Population definition:
 
 -   The MA EJ Population definition is based entirely on three demographic criteria - percent minority OR percent limited English speaking households, OR percent households below 65% of statewide median household income.
--   MassEnviroScreen defines "disadvantaged communities" based on a cumulative impact score that integrates demographic criteria, health status, and environmental conditions across more than two dozen indicators, OR percent of limited English speaking households, OR percent of households below 65% of statewide median household income, OR presence of federally recognized tribal land.
+-   MassEnviroScreen defines "Unfairly Burdened Areas" based on a cumulative impact score that integrates demographic criteria, health status, and environmental conditions across more than two dozen indicators, OR percent of limited English speaking households, OR percent of households below 65% of statewide median household income, OR presence of federally recognized tribal land.
 -   MassEnviroScreen does not use race or ethnicity as indicators.
 
 Both approaches, however, are based on important decisions about which indicators to use, and what threshold to use for prioritization. The latter are important policy decisions that may not be resolved by a technical analysis.
 
 ### Coverage of the state
 
-Under the current Massachusetts Environmental Justice Population definition `{r} round(sum(MassEnviroScreen$EJ == "Yes")/nrow(MassEnviroScreen)*100,1)`% of Massachusetts block groups are classified as environmental justice communities. These environmental justice block groups occur in `{r} length(unique(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",]$COSUB))` (`{r} round(length(unique(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",]$COSUB))/351*100,1)`%) of Massachusetts municipalities (based on American Community Survey 2023 5-year estimates). By contrast, `{r} round(nrow(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",])/nrow(MassEnviroScreen)*100,1)`% of Massachusetts block groups meet the criteria for MassEnviroScreen's disadvantaged communities. The latter occur in `{r} length(unique(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",]$COSUB))` (`{r} round(length(unique(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",]$COSUB))/351*100,1)`%) of Massachusetts municipalities.
+Under the current Massachusetts Environmental Justice Population definition `{r} round(sum(MassEnviroScreen$EJ == "Yes")/nrow(MassEnviroScreen)*100,1)`% of Massachusetts block groups are classified as environmental justice communities. These environmental justice block groups occur in `{r} length(unique(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",]$COSUB))` (`{r} round(length(unique(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",]$COSUB))/351*100,1)`%) of Massachusetts municipalities (based on American Community Survey 2023 5-year estimates). By contrast, `{r} round(nrow(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",])/nrow(MassEnviroScreen)*100,1)`% of Massachusetts block groups meet the criteria for MassEnviroScreen's Unfairly Burdened Areas. The latter occur in `{r} length(unique(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",]$COSUB))` (`{r} round(length(unique(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",]$COSUB))/351*100,1)`%) of Massachusetts municipalities.
 
 ### Overlap with EJ criteria
 
-Although MassEnviroScreen identifies a smaller number of census block groups, there is considerable overlap between communities meeting the state's current environmental justice population definition and the criteria for disadvantaged communities. Although `{r} round(nrow(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",])/nrow(MassEnviroScreen)*100,1)`% of census block groups in the state meet the criteria for disadvantaged communities, `{r}  round(nrow(MassEnviroScreen[(MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None") & MassEnviroScreen$EJ=="Yes",])/nrow(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",])*100,1)`% of block groups defined as environmental justice populations also meet the disadvantaged communities criteria. @fig-EJoverlap shows the degree of overlap between the various criteria of environmental justice populations and disadvantaged communities. There is 100% overlap with all state Environmental Justice Population criteria save for the Minority-only category. Only 32% of census block groups defined as a Environmental Justice Population based solely on the Minority criterion (i.e., 40% or more minority) overlap with disadvantaged communities as defined here.
+Although MassEnviroScreen identifies a smaller number of census block groups, there is considerable overlap between communities meeting the state's current environmental justice population definition and the criteria for Unfairly Burdened Areas. Although `{r} round(nrow(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",])/nrow(MassEnviroScreen)*100,1)`% of census block groups in the state meet the criteria for Unfairly Burdened Areas, `{r}  round(nrow(MassEnviroScreen[(MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None") & MassEnviroScreen$EJ=="Yes",])/nrow(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",])*100,1)`% of block groups defined as environmental justice populations also meet the Unfairly Burdened Areas criteria. @fig-EJoverlap shows the degree of overlap between the various criteria of environmental justice populations and Unfairly Burdened Areas. There is 100% overlap with all state Environmental Justice Population criteria save for the Minority-only category. Only 32% of census block groups defined as a Environmental Justice Population based solely on the Minority criterion (i.e., 40% or more minority) overlap with Unfairly Burdened Areas as defined here.
 
 ```{r}
 #| echo: false
@@ -388,7 +388,7 @@ MassEnviroScreen %>%
   ggplot(aes(x = reorder(EJ_CRIT_DESC, pct), y = pct, fill = EJ_CRIT_DESC)) +
   geom_col() +
   coord_flip() +
-  labs(title = "MA EJ Population Criteria Overlap with\nMassEnviroScreen Disadvantaged Communities", caption = "Based on percentage of EJ census block groups") +
+  labs(title = "MA EJ Population Criteria Overlap with\nMassEnviroScreen Unfairly Burdened Areas", caption = "Based on percentage of EJ census block groups") +
   xlab("") + ylab("") +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +
   scale_fill_manual(values = c(
@@ -405,7 +405,7 @@ MassEnviroScreen %>%
 
 ### MassEnviroScreen cumulative impact scores by EJ criteria
 
-@fig-EJscores shows the distribution of MassEnviroScreen cumulative impact scores for block groups meeting each of the environmental justice criteria. In comparison to non-EJ block groups in Massachusetts, median cumulative impact scores for six out of the seven EJ criteria are above the 50th percentile. In other words, most block groups meeting the state's current environmental justice population definition have cumulative impact scores that are higher than 50% of block groups across the state overall. In addition, five out of the seven also have median values above the 75th percentile or threshold for disadvantaged communities.
+@fig-EJscores shows the distribution of MassEnviroScreen cumulative impact scores for block groups meeting each of the environmental justice criteria. In comparison to non-EJ block groups in Massachusetts, median cumulative impact scores for six out of the seven EJ criteria are above the 50th percentile. In other words, most block groups meeting the state's current environmental justice population definition have cumulative impact scores that are higher than 50% of block groups across the state overall. In addition, five out of the seven also have median values above the 75th percentile or threshold for Unfairly Burdened Areas.
 
 ```{r}
 #| echo: false
