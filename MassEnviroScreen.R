@@ -102,40 +102,60 @@ ma_tract23 <- tracts(state = "MA", year = 2023) %>%
 # load CDC places data with prevalence values by census tract. see https://data.cdc.gov/500-Cities-Places/PLACES-Local-Data-for-Better-Health-Census-Tract-D/cwsq-ngmh/about_data
 health_tract <- read_csv("data/PLACES/PLACES__Local_Data_for_Better_Health__Census_Tract_Data_2024_release_20241027.csv") %>% 
   filter(StateDesc == "Massachusetts" & 
-           Measure %in% c("High blood pressure among adults", # EPA recommended
-                          # "Coronary heart disease among adults",
+           Measure %in% c("High blood pressure among adults",
+                          "Coronary heart disease among adults",
+                          "Chronic obstructive pulmonary disease among adults",
                           "Current asthma among adults",
                           "Cancer (non-skin) or melanoma among adults")) %>% 
   pivot_wider(id_cols = LocationID, names_from = Measure, values_from = Data_Value) %>% 
   mutate(SPpctileHPRSSR = percent_rank(`High blood pressure among adults`)*100,
+         SPpctileHRTDIS = percent_rank(`Coronary heart disease among adults`)*100,
          SPpctileASTHMA = percent_rank(`Current asthma among adults`)*100,
-         SPpctileCANCER = percent_rank(`Cancer (non-skin) or melanoma among adults`)*100)
+         SPpctileCANCER = percent_rank(`Cancer (non-skin) or melanoma among adults`)*100,
+         SPpctileCOPD = percent_rank(`Chronic obstructive pulmonary disease among adults`)*100)
 
-# load low birthweight data from MA Vital Stats. See https://www.mass.gov/info-details/birth-outcomes-data-of-massachusetts-residents 
-lbw_cosub <- read_excel("data/MADPH/Birth_Community_Detailed_Topic_of_Massachusetts_Residents.xlsx", 
-                        sheet = "Delivery Information") %>% 
-  filter(`Delivery Information Topic` == "Birthweight" & 
-           `Comparison Sub-Topic` %in% c("Low (LBW): <2500 grams", 
-                                         "Very Low (VLBW): <1500 grams")) %>% 
-  mutate(`Percent of live Birth` = as.numeric(`Percent of live Birth`)*100) %>% 
-  group_by(City) %>% 
-  summarize(LBWpct = sum(`Percent of live Birth`, na.rm = TRUE)) %>% 
-  mutate(SPpctileLBW = percent_rank(LBWpct)*100)
+# # load low birthweight data from MA Vital Stats. See https://www.mass.gov/info-details/birth-outcomes-data-of-massachusetts-residents 
+# lbw_cosub <- read_excel("data/MADPH/Birth_Community_Detailed_Topic_of_Massachusetts_Residents.xlsx", 
+#                         sheet = "Delivery Information") %>% 
+#   filter(`Delivery Information Topic` == "Birthweight" & 
+#            `Comparison Sub-Topic` %in% c("Low (LBW): <2500 grams", 
+#                                          "Very Low (VLBW): <1500 grams")) %>% 
+#   mutate(`Percent of live Birth` = as.numeric(`Percent of live Birth`)*100) %>% 
+#   group_by(City) %>% 
+#   summarize(LBWpct = sum(`Percent of live Birth`, na.rm = TRUE)) %>% 
+#   mutate(SPpctileLBW = percent_rank(LBWpct)*100)
 
 # RECOMMENDED ENVTL HEALTH DISPARITY INDICATOR BY EPA. see https://www.epa.gov/environmentaljustice/indicators-environmental-health-disparities
-# load pediatric asthma from MA Environmental Public Health Tracking. See https://matracking.ehs.state.ma.us/Health-Data/Asthma/index.html
-asthma_cosub <- read_csv("data/MADPH/pediatricAsthma2017_23.csv") %>% 
-  filter(`School Year` %in% c("2017-2018","2022-2023")) %>% 
-  mutate(Prevalence = as.numeric(Prevalence)) %>% 
-  group_by(Geography) %>% 
-  summarize(PedAsthmaPrevalence = mean(Prevalence, na.rm = TRUE)) %>% 
-  mutate(SPpctileASTHMAped = percent_rank(PedAsthmaPrevalence)*100)
+# # load pediatric asthma from MA Environmental Public Health Tracking. See https://matracking.ehs.state.ma.us/Health-Data/Asthma/index.html
+# asthma_cosub <- read_csv("data/MADPH/pediatricAsthma2017_23.csv") %>% 
+#   filter(`School Year` %in% c("2017-2018","2022-2023")) %>% 
+#   mutate(Prevalence = as.numeric(Prevalence)) %>% 
+#   group_by(Geography) %>% 
+#   summarize(PedAsthmaPrevalence = mean(Prevalence, na.rm = TRUE)) %>% 
+#   mutate(SPpctileASTHMAped = percent_rank(PedAsthmaPrevalence)*100)
 
-# load myocardial infarction from MA Environmental Public Health Tracking. See https://matracking.ehs.state.ma.us/Health-Data/Asthma/index.html
-myocardio_cosub <- read_xlsx("data/MADPH/MyoCardioInfarchospitalization2017_21per10k.xlsx") %>% 
-  filter(str_detect(`Geo Description`, " - Average")) %>% 
-  mutate(`Myocardio Age Adjusted Rate` = as.numeric(`Age Adjusted Rate`),
-         SPpctileMYOC = percent_rank(`Myocardio Age Adjusted Rate`)*100)
+# Calculate weighted average percent pediatric asthma per block group. load pediatric asthma by school by BG from MassDEP Cumulative Impact Analysis in Air Quality Permitting at https://www.mass.gov/info-details/cumulative-impact-analysis-in-air-quality-permitting#cia-guidance-and-tools-
+# load school list with associated block groups within 1/2 mile
+DEP_schools_blkgrp <- read_xlsx("data/DEP/Indicator data for cumulative impact analysis UPDATED Jan 2025.xlsx", sheet = "Block Group-Schools") %>% 
+  transmute(GEOID = `Block Group`, 
+            SCHID = `SCHOOL CODE\r\n(SCHID)`)
+# join BGs to schools and compute weighted average percentage of pediatric asthma per BG
+asthma_blkgrp <- read_xlsx("data/DEP/Indicator data for cumulative impact analysis UPDATED Jan 2025.xlsx", skip = 1, sheet = "Pediatric Asthma by School") %>% 
+  transmute(SCHID = `School Code`,
+            sch_enroll = as.numeric(`Average Enrollment Count`),
+            pedAsthmaPrevalence = as.numeric(`Pediatric Asthma Prevalence\r\n(% of students)`)) %>% 
+  filter(!is.na(pedAsthmaPrevalence) | !is.na(sch_enroll)) %>% 
+  left_join(., DEP_schools_blkgrp, by = "SCHID") %>% # assign BG ID to each school
+  group_by(GEOID) %>% 
+  summarize(pedAsthmaPrevalence = weighted.mean(pedAsthmaPrevalence, sch_enroll)) %>% 
+  ungroup() %>% 
+  mutate(SPpctileAsthmaPed = percent_rank(pedAsthmaPrevalence)*100)
+
+# # load myocardial infarction from MA Environmental Public Health Tracking. See https://matracking.ehs.state.ma.us/Health-Data/Asthma/index.html
+# myocardio_cosub <- read_xlsx("data/MADPH/MyoCardioInfarchospitalization2017_21per10k.xlsx") %>% 
+#   filter(str_detect(`Geo Description`, " - Average")) %>% 
+#   mutate(`Myocardio Age Adjusted Rate` = as.numeric(`Age Adjusted Rate`),
+#          SPpctileMYOC = percent_rank(`Myocardio Age Adjusted Rate`)*100)
 
 # # load ejscreen low life expectancy variable, although note that original data for that metric comes at tract level from Life Expectancy at Birth from CDC, National Center for Health Statistics https://www.cdc.gov/nchs/data-visualization/life-expectancy/index.html
 # life_blkgrp <- read_csv("data/EJSCREEN24/EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_VI.csv") %>% 
@@ -144,13 +164,15 @@ myocardio_cosub <- read_xlsx("data/MADPH/MyoCardioInfarchospitalization2017_21pe
 #   rename_with(~str_remove(., "P_"), .cols = P_LIFEEXPPCT) %>% 
 #   rename_with(~str_c("SPpctile", .), .cols = LIFEEXPPCT)
 
-# load MADPH premature mortality rate and confirmed elevated blood levels by census tract. Average Annual Prevalence of Males and Females with estimated confirmed blood lead levels >= 5 micrograms/decilieter in 2019 - 2023 that were between 9 and less than 48 months of age. Acquired from MassDEP Cumulative Impact Analysis in Air Quality Permitting at https://www.mass.gov/info-details/cumulative-impact-analysis-in-air-quality-permitting#cia-guidance-and-tools-
-DEP_BLL_life_tract <- read_xlsx("data/DEP/Indicator data for cumulative impact analysis UPDATED Jan 2025.xlsx", skip = 1, sheet = "Indicators by Tract") %>% 
+# load MADPH premature mortality rate, low birth weight, and confirmed elevated blood levels by census tract. MDPH provided an age-adjusted premature mortality rate (PMR per 100,000) by tract. Average Annual Prevalence of Males and Females with estimated confirmed blood lead levels >= 5 micrograms/decilieter in 2017 - 2021 that were between 9 and less than 48 months of age. Acquired from MassDEP Cumulative Impact Analysis in Air Quality Permitting at https://www.mass.gov/info-details/cumulative-impact-analysis-in-air-quality-permitting#cia-guidance-and-tools-
+DEP_LBW_PMR_tract <- read_xlsx("data/DEP/Indicator data for cumulative impact analysis UPDATED Jan 2025.xlsx", skip = 1, sheet = "Indicators by Tract") %>% 
   transmute(GEOID_TRACT = as.character(Tract), 
             BLL = `Elevated  Blood Lead\r\r\n\r\r\n(per 1000 screened)`,
-            SPpctileBLL = `Elevated  Blood Lead\r\r\n\r\r\n(%tile)`,
+            EXPpctileBLL = percent_rank(`Elevated  Blood Lead\r\r\n\r\r\n(%tile)`)*100, #Exp
             PMR = `PreMature Mortality Rate (PMR) \r\n(pre 100,000 residents)`,
-            SPpctilePMR = `PMR\r\r\n(%tile)`)
+            SPpctilePMR = percent_rank(`PMR\r\r\n(%tile)`)*100, # Sensitive pop indicator
+            LBW = `Low Birth Weight\r\r\n\r\r\n(per 100 live singlton births)`,
+            SPpctileLBW = percent_rank(`Low Birth Weight\r\r\n\r\r\n(%tile)`)*100) 
 
 
 ## Environmental Exposure Indicators
@@ -160,21 +182,37 @@ DEP_BLL_life_tract <- read_xlsx("data/DEP/Indicator data for cumulative impact a
 # load ejscreen variables with percentile values; create for PRE1960PCT; rename
 ejscreen <- read_csv("data/EJSCREEN24/EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_VI.csv") %>% 
   filter(ST_ABBREV == "MA") %>% 
-  select(ID, PM25, P_PM25, OZONE, P_OZONE, DSLPM, P_DSLPM, NO2, P_NO2, PTRAF, P_PTRAF, RSEI_AIR, 
-         P_RSEI_AIR, DWATER, P_DWATER) %>% 
+  select(ID, PM25, P_PM25, OZONE, P_OZONE, DSLPM, P_DSLPM, NO2, P_NO2, PTRAF, P_PTRAF, 
+         DWATER, P_DWATER) %>% 
   rename_with(function(x) {gsub("P_", "EXPpctile", x)})
   # select(ID, P_PM25, P_OZONE, P_DSLPM, P_NO2, P_PTRAF, P_RSEI_AIR, P_DWATER) %>% 
   # rename_with(~str_remove(., "P_"), .cols = P_PM25:P_DWATER) %>% 
   # rename_with(~str_c("EXPpctile", .), .cols = PM25:DWATER)
 
-# Children's Lead Risk from Housing. Percentage of households within a census tract with likelihood of lead-based paint (LBP) hazards from the age of housing combined with the percentage of households that are both low-income (household income less than 80% of the county median family income) and have children under 6 years old. HERE WE USE HUD CHAS (Comprehensive Housing Affordability Strategy) data at Census tract level. See https://www.huduser.gov/portal/datasets/cp.html DIFFERENT FROM CALENVIROSCREEN METHOD. METRIC HERE IS HOUSING UNIT STRUCTURE BUILT BEFORE 1979 AND LESS THAN 80% HUD area median family income AND CHILDREN 6 OR YOUNGER. 
-blrisk_tract <- read_csv("data/CHAS/140/Table13.csv") %>% 
-  filter(st == "25") %>% 
-  transmute(tract = paste0(st,cnty,tract), 
-            blrisk = (T13_est21 + T13_est24 + T13_est27 + T13_est37 + T13_est40 + T13_est43 + 
-                         T13_est70 + T13_est73 + T13_est76 + T13_est86 + T13_est89 + 
-                        T13_est92)/T13_est1 * 100,
-            EXPpctileBLRISK = percent_rank(blrisk)*100)
+# Use EPA's 2020 AirToxScreen total cancer risk at block level and aggregate to block groups. See https://www.epa.gov/AirToxScreen/2020-airtoxscreen-assessment-results
+airtox2020_blkgrp <- read_xlsx("data/EPA/Region1_CancerRisk_by_block_srcgrp.xlsx") %>% 
+  filter(State == "MA") %>% 
+  select(Block, Population, `Total Cancer Risk (per million)`) %>% 
+  mutate(GEOID = str_sub(Block, 1,12)) %>% 
+  group_by(GEOID) %>% 
+  summarize(CancerRisk = weighted.mean(`Total Cancer Risk (per million)`, Population)) %>% 
+  ungroup() %>% 
+  mutate(EXPpctileCancerRisk = percent_rank(CancerRisk)*100)
+# Use EPA 2019 AirToxScreen Respiratory Hazard Index at tract level. See https://www.epa.gov/AirToxScreen/2019-airtoxscreen-assessment-results 
+airtox2019_tract <- read_xlsx("data/EPA/2019_National_allHI_byTract.xlsx") %>% 
+  filter(str_starts(Tract, "25")) %>% 
+  select(Tract, `Respiratory HI`) %>% 
+  mutate(EXPpctileRespHI = percent_rank(`Respiratory HI`)*100)
+
+
+# # Children's Lead Risk from Housing. Percentage of households within a census tract with likelihood of lead-based paint (LBP) hazards from the age of housing combined with the percentage of households that are both low-income (household income less than 80% of the county median family income) and have children under 6 years old. HERE WE USE HUD CHAS (Comprehensive Housing Affordability Strategy) data at Census tract level. See https://www.huduser.gov/portal/datasets/cp.html DIFFERENT FROM CALENVIROSCREEN METHOD. METRIC HERE IS HOUSING UNIT STRUCTURE BUILT BEFORE 1979 AND LESS THAN 80% HUD area median family income AND CHILDREN 6 OR YOUNGER. 
+# blrisk_tract <- read_csv("data/CHAS/140/Table13.csv") %>% 
+#   filter(st == "25") %>% 
+#   transmute(tract = paste0(st,cnty,tract), 
+#             blrisk = (T13_est21 + T13_est24 + T13_est27 + T13_est37 + T13_est40 + T13_est43 + 
+#                          T13_est70 + T13_est73 + T13_est76 + T13_est86 + T13_est89 + 
+#                         T13_est92)/T13_est1 * 100,
+#             EXPpctileBLRISK = percent_rank(blrisk)*100)
 
 
 ## Environmental Effects Indicators
@@ -771,22 +809,32 @@ heat <- read_csv("data/CDC/data_134739.csv") %>%
 MassEnviroScreen <- ma_blkgrp23 %>% 
   select(GEOID, GEOID_TRACT, COSUB, COUNTYFP) %>% 
   left_join(., ejscreen, by = c("GEOID" = "ID")) %>% 
-  left_join(., select(blrisk_tract, tract, blrisk, EXPpctileBLRISK), 
-            by = c("GEOID_TRACT" = "tract")) %>% 
-  left_join(., select(cleanup_all, GEOID, cleanup_score, EFFCTpctileCleanup)) %>% 
-  left_join(., select(gwater_all, GEOID, gwater_score, EFFCTpctileGrndWater)) %>% 
+  # left_join(., select(blrisk_tract, tract, blrisk, EXPpctileBLRISK), 
+  #           by = c("GEOID_TRACT" = "tract")) %>% 
+  left_join(., select(airtox2020_blkgrp, GEOID, CancerRisk, EXPpctileCancerRisk), 
+            by = "GEOID") %>% 
+  left_join(., select(airtox2019_tract, Tract, `Respiratory HI`, EXPpctileRespHI), 
+            by = c("GEOID_TRACT" = "Tract")) %>% 
+  left_join(., select(cleanup_all, GEOID, cleanup_score, EFFCTpctileCleanup), by = "GEOID") %>% 
+  left_join(., select(gwater_all, GEOID, gwater_score, EFFCTpctileGrndWater), by = "GEOID") %>% 
   left_join(., select(BWPMAJOR_PT, GEOID, BWPScore, EFFCTpctileBWPMAJOR_PT), by = "GEOID") %>% 
   left_join(., select(sw_all, GEOID, SWScore, EFFCTpctileSW), by = "GEOID") %>% 
   left_join(., select(IL_sum, GEOID, IL_count, EFFCTpctileIL), by = "GEOID") %>% 
   left_join(., select(health_tract, LocationID, `High blood pressure among adults`, 
-                      SPpctileHPRSSR, `Cancer (non-skin) or melanoma among adults`, 
+                      SPpctileHPRSSR, `Coronary heart disease among adults`, SPpctileHRTDIS,
+                      `Chronic obstructive pulmonary disease among adults`, SPpctileCOPD,
+                      `Current asthma among adults`, SPpctileASTHMA,
+                      `Cancer (non-skin) or melanoma among adults`, 
                       SPpctileCANCER),
             by = c("GEOID_TRACT" = "LocationID")) %>% 
-  left_join(., select(lbw_cosub, City, LBWpct, SPpctileLBW), by = c("COSUB" = "City")) %>% 
-  left_join(., select(asthma_cosub, Geography, PedAsthmaPrevalence, SPpctileASTHMAped), 
-            by = c("COSUB" = "Geography")) %>% 
+  left_join(., select(asthma_blkgrp, GEOID, pedAsthmaPrevalence, SPpctileAsthmaPed), 
+            by = "GEOID") %>% 
+  # left_join(., select(lbw_cosub, City, LBWpct, SPpctileLBW), by = c("COSUB" = "City")) %>% 
+  # left_join(., select(asthma_cosub, Geography, PedAsthmaPrevalence, SPpctileASTHMAped), 
+  #           by = c("COSUB" = "Geography")) %>% 
   # left_join(., life_blkgrp, by = c("GEOID" = "ID")) %>% 
-  left_join(., select(DEP_BLL_life_tract, GEOID_TRACT, BLL, SPpctileBLL, PMR, SPpctilePMR),
+  left_join(., select(DEP_LBW_PMR_tract, GEOID_TRACT, BLL, EXPpctileBLL, LBW, SPpctileLBW, PMR, 
+                      SPpctilePMR),
             by = "GEOID_TRACT") %>% 
   left_join(., select(ma_blkgrp23HS, GEOID, HSlesspctE, SEpctileHS), by = "GEOID") %>% 
   left_join(., select(hhburden, geoid2, hhburden, SEpctileHHB), by = c("GEOID_TRACT" = "geoid2")) %>% 
@@ -856,7 +904,11 @@ MassEnviroScreen <- block_groups(state = "MA", year = 2023, cb = TRUE) %>%
   mutate(UBA = if_else(MassEnviroScore >= 75 | 
                          medHHincMAPCT <= 65 | 
                          limitEngpctE >= 25 | 
-                         LARName != "None", "Yes", "No"))
+                         LARName != "None", "Yes", "No"),
+         UBAhealth = if_else(pedAsthmaPrevalence > mean(pedAsthmaPrevalence, na.rm=T)*2 |
+                               LBW > mean(LBW, na.rm=T)*2 |
+                               BLL > mean(BLL, na.rm=T)*2 |
+                               PMR > mean(PMR, na.rm=T)*2, "Yes", "No"))
 
-# save for later analysis
+# save for later analysis and mapping
 saveRDS(MassEnviroScreen, "MassEnviroScreen.rds")
