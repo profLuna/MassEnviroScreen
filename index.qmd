@@ -387,17 +387,21 @@ PM25s <- MassEnviroScreen %>%
   nrow()
 
 # create the table
-data.frame(Indicator = c("MassEnviroScreen Score > 75", "Median Household Income",
-                         "Limited English Households", "Tribal Territory", "Pediatric Asthma", 
-                         "Low Birthweight", "Elevated Blood Lead Levels", "Premature Mortality", 
-                         "Coronary Heart Disease", "Ozone", "PM25"),
+data.frame(Indicator = c("MassEnviroScreen Score > 75%tile", "Median Household Income < 65% MA",
+                         "Limited English Households > 25%", "Tribal Territory", 
+                         "Pediatric Asthma > 200% MA", "Low Birthweight > 200% MA", 
+                         "Elevated Blood Lead Levels > 200% MA", "Premature Mortality > 200% MA",                          "Coronary Heart Disease > 200% MA", "Ozone > 200% MA", 
+                         "PM25 > 200% MA"),
                    `Block Groups` = c(MES75s, MHHIs, LEPs, LARs, Asthmas, LBWs, BLLs, PMRs, CHDs,
                                       OZONEs, PM25s)) %>% 
   mutate(PctUBAs = paste0(round(Block.Groups/MassEnviroScreen %>% 
                                   filter(UBA=="Yes") %>% nrow()*100, 1),"%"),
          PctStateBGs = paste0(round(Block.Groups/nrow(MassEnviroScreen)*100, 1),"%")) %>% 
+  arrange(., desc(Block.Groups)) %>% 
   kable(caption = "Criteria for Unfairly Burdened Areas", 
-        col.names = c("UBA Criteria", "Number of Block Groups", "Pct of UBAs", "Pct of State Block Groups")) %>% 
+        col.names = c("UBA Criteria", "Number of Block Groups", "Pct of UBAs", 
+                      "Pct of State Block Groups"),
+        align = "l") %>% 
   kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
