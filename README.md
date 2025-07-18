@@ -1,6 +1,6 @@
 # MassEnviroScreen
 
-This code builds a tool for identifying or prioritizing the most environmentally vulnerable or burdened communities in Massachusetts based on a cumulative impact score that incorporates exposure to pollution and climate risks and the presence of sensitive or vulnerable populations, as well as whether the community meets criteria related to limited English proficiency, household income, or presence of tribal land. It is intended to act as a supplement to the Massachusetts Environmental Justice Population definition. A fully functioning webpage with the interactive MassEnviroScreen mapping tool is available [here](https://profluna.github.io/MassEnviroScreen/ "Link to interactive MassEnviroScreen map").
+This code builds a tool for identifying or prioritizing the most environmentally vulnerable or burdened communities in Massachusetts based on a cumulative impact score that incorporates exposure to pollution and climate risks and the presence of sensitive or vulnerable populations, whether the community meets criteria related to limited English proficiency, household income, or presence of tribal land, or if rates of health indicators and air quality exceed 200% of the statewide average. It is intended to act as a supplement to the Massachusetts Environmental Justice Population definition. A fully functioning webpage with the interactive MassEnviroScreen mapping tool is available [here](https://profluna.github.io/MassEnviroScreen/ "Link to interactive MassEnviroScreen map").
 
 Below is a description of the main files in this repository:
 
@@ -28,6 +28,6 @@ Below is a description of the main files in this repository:
 
 -   docs, index_files, and site_libs folders contain files created by rendering for the webpage
 
-The data used to generate the Environmental Justice Population and MassEnviroScreen layers is not stored in this repository. ACS data is acquired via the tidycensus API directly in the code. Some layers are downloaded via the `download.file()` function in the code. Some data must be downloaded manually into a data folder with the appropriate path in order to reproduce the workflow. For those simply interested in the final MassEnviroScreen score data layer, use `MassEnviroScreen <- readRDS("MassEnviroScreen.rds")` to access the data.
+The data used to generate the Environmental Justice Population and MassEnviroScreen layers is not stored in this repository. ACS data is acquired via the tidycensus API directly in the code. Some layers are downloaded via the `download.file()` function in the code. Some data must be downloaded manually into a data folder with the appropriate path in order to reproduce the workflow. For those simply interested in the final MassEnviroScreen score data, see MassEnviroScreen.csv. To load the sf layer in R, use `MassEnviroScreen <- readRDS("MassEnviroScreen.rds")` to access the data.
 
 This project is a work in progress.
