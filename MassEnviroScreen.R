@@ -322,10 +322,10 @@ brownfields <- readRDS("data/EPA/brownfields.rds")
 brownfields <- brownfields %>% 
   mutate(brownfieldsScore = case_when(
     dists > 1000 ~ 0,
-    dists >= 750 & dists <= 1000 ~ 0.1*4,
-    dists >= 500 & dists < 750 ~ 0.25*4,
-    dists >= 250 & dists < 500 ~ 0.5*4,
-    dists < 250 ~ 1*4,
+    dists >= 750 & dists <= 1000 ~ 0.1*7,
+    dists >= 500 & dists < 750 ~ 0.25*7,
+    dists >= 250 & dists < 500 ~ 0.5*7,
+    dists < 250 ~ 1*7,
     .default = 1
   ))
 # sum up values by block group
@@ -354,11 +354,16 @@ C21E_pt <- readRDS("data/MASSGIS/C21E_pt.rds")
 # adjust weights by distance
 C21E_pt <- C21E_pt %>% 
   mutate(C21E_ptScore = case_when(
-    dists > 1000 ~ 0,
-    dists >= 750 & dists <= 1000 ~ 0.1*12,
-    dists >= 500 & dists < 750 ~ 0.25*12,
-    dists >= 250 & dists < 500 ~ 0.5*12,
-    dists < 250 ~ 1*12,
+    STATUS %in% c("TIERI", "TIER1D") & dists > 1000 ~ 0,
+    STATUS %in% c("TIERI", "TIER1D") & dists >= 750 & dists <= 1000 ~ 0.1*12,
+    STATUS %in% c("TIERI", "TIER1D") & dists >= 500 & dists < 750 ~ 0.25*12,
+    STATUS %in% c("TIERI", "TIER1D") & dists >= 250 & dists < 500 ~ 0.5*12,
+    STATUS %in% c("TIERI", "TIER1D") & dists < 250 ~ 1*12,
+    STATUS == "TIERII" & dists > 1000 ~ 0,
+    STATUS == "TIERII" & dists >= 750 & dists <= 1000 ~ 0.1*9,
+    STATUS == "TIERII" & dists >= 500 & dists < 750 ~ 0.25*9,
+    STATUS == "TIERII" & dists >= 250 & dists < 500 ~ 0.5*9,
+    STATUS == "TIERII" & dists < 250 ~ 1*9,
     .default = 1
   ))
 # sum up values by block group
@@ -389,20 +394,30 @@ aul_pt <- readRDS("data/MASSGIS/aul_pt.rds")
 # adjust weights by distance
 aul_pt <- aul_pt %>% 
   mutate(aul_ptScore = case_when(
+    STATUS %in% c("TIERI", "TIER1D") & dists > 1000 ~ 0,
+    STATUS %in% c("TIERI", "TIER1D") & dists >= 750 & dists <= 1000 ~ 0.1*12,
+    STATUS %in% c("TIERI", "TIER1D") & dists >= 500 & dists < 750 ~ 0.25*12,
+    STATUS %in% c("TIERI", "TIER1D") & dists >= 250 & dists < 500 ~ 0.5*12,
+    STATUS %in% c("TIERI", "TIER1D") & dists < 250 ~ 1*12,
+    STATUS == "TIER 2" & dists > 1000 ~ 0,
+    STATUS == "TIER 2" & dists >= 750 & dists <= 1000 ~ 0.1*9,
+    STATUS == "TIER 2" & dists >= 500 & dists < 750 ~ 0.25*9,
+    STATUS == "TIER 2" & dists >= 250 & dists < 500 ~ 0.5*9,
+    STATUS == "TIER 2" & dists < 250 ~ 1*9,
     RAO_CLASS %in% c("A1","B1") | dists > 1000 ~ 0,
-    (RAO_CLASS %in% c("C1","C2") | STATUS %in% c("TIERI", "TIER1D", "TIER 2")) & 
-      dists >= 750 & dists <= 1000 ~ 0.1*12,
-    (RAO_CLASS %in% c("C1","C2") | STATUS %in% c("TIERI", "TIER1D", "TIER 2")) &
-      dists >= 500 & dists < 750 ~ 0.25*12,
-    (RAO_CLASS %in% c("C1","C2") | STATUS %in% c("TIERI", "TIER1D", "TIER 2")) &
-      dists >= 250 & dists < 500 ~ 0.5*12,
-    (RAO_CLASS %in% c("C1","C2") | STATUS %in% c("TIERI", "TIER1D", "TIER 2")) &
-      dists < 250 ~ 1*12,
-    RAO_CLASS %in% c("A2","A3","A4","B2","B3") & dists >= 750 & dists <= 1000 ~ 0.1*10,
-    RAO_CLASS %in% c("A2","A3","A4","B2","B3") & dists >= 500 & dists < 750 ~ 0.25*10,
-    RAO_CLASS %in% c("A2","A3","A4","B2","B3") & dists >= 250 & dists < 500 ~ 0.5*10,
-    RAO_CLASS %in% c("A2","A3","A4","B2","B3") & dists < 250 ~ 1*10,
-    .default = 0
+    RAO_CLASS %in% c("A3","A4","C1","C2") & dists >= 750 & dists <= 1000 ~ 0.1*7,
+    RAO_CLASS %in% c("A3","A4","C1","C2") & dists >= 500 & dists < 750 ~ 0.25*7,
+    RAO_CLASS %in% c("A3","A4","C1","C2") & dists >= 250 & dists < 500 ~ 0.5*7,
+    RAO_CLASS %in% c("A3","A4","C1","C2") & dists < 250 ~ 1*7,
+    RAO_CLASS %in% c("B2", "B3") & dists >= 750 & dists <= 1000 ~ 0.1*4,
+    RAO_CLASS %in% c("B2", "B3") & dists >= 500 & dists < 750 ~ 0.25*4,
+    RAO_CLASS %in% c("B2", "B3") & dists >= 250 & dists < 500 ~ 0.5*4,
+    RAO_CLASS %in% c("B2", "B3") & dists < 250 ~ 1*4,
+    RAO_CLASS == "A2" & dists >= 750 & dists <= 1000 ~ 0.1*1,
+    RAO_CLASS == "A2" & dists >= 500 & dists < 750 ~ 0.25*1,
+    RAO_CLASS == "A2" & dists >= 250 & dists < 500 ~ 0.5*1,
+    RAO_CLASS == "A2" & dists < 250 ~ 1*1,
+    .default = 1
   ))
 # sum up values by block group
 aul_pt <- aul_pt %>% 
@@ -523,16 +538,35 @@ gwater_all <- left_join(USTreleases, GWP, by = "GEOID") %>%
 BWPMAJOR_PT <- readRDS("data/MASSGIS/BWPMAJOR_PT.rds")
 # adjust weights by distance
 BWPMAJOR_PT <- BWPMAJOR_PT %>% 
+  mutate(TSDFpt = if_else(TSDF == "Y", 10, NA), 
+         HWRpt = if_else(HWR == "Y", 7, NA),
+         LQGpt = if_else(LQG_MA == "Y" | LQG_RCRA == "Y" | LQTU == "Y", 1, NA),
+         AIRpt = if_else(AIR == "Y", 1, NA),
+         RCRApt = if_else(LQG_RCRA == "Y", 2, NA)) %>% 
+  rowwise() %>% 
+  mutate(TSDFpt2 = if_else(!is.na(TSDF), sum(c_across(c(TSDFpt, LQGpt, AIRpt, RCRApt)), 
+                                             na.rm = TRUE), NA),
+         HWRpt2 = if_else(!is.na(HWR), sum(c_across(c(HWRpt, LQGpt, AIRpt, RCRApt)), 
+                                           na.rm = TRUE), NA)) %>% 
+  ungroup() %>% 
   mutate(BWPScore = case_when(
     dists > 1000 ~ 0,
-    (LQG_MA == "Y" | LQG_RCRA == "Y" | LQTU == "Y") & dists >= 750 & dists <= 1000 ~ 0.1*2,
-    (LQG_MA == "Y" | LQG_RCRA == "Y" | LQTU == "Y") & dists >= 500 & dists < 750 ~ 0.25*2,
-    (LQG_MA == "Y" | LQG_RCRA == "Y" | LQTU == "Y") & dists >= 250 & dists < 500 ~ 0.5*2,
-    (LQG_MA == "Y" | LQG_RCRA == "Y" | LQTU == "Y") & dists < 250 ~ 1*2,
-    (TSDF == "Y" | HWR == "Y") & dists >= 750 & dists <= 1000 ~ 0.1*7,
-    (TSDF == "Y" | HWR == "Y") & dists >= 500 & dists < 750 ~ 0.25*7,
-    (TSDF == "Y" | HWR == "Y") & dists >= 250 & dists < 500 ~ 0.5*7,
-    (TSDF == "Y" | HWR == "Y") & dists < 250 ~ 1*7,
+    TSDF == "Y" & dists >= 750 & dists <= 1000 ~ 0.1*TSDFpt2,
+    TSDF == "Y" & dists >= 500 & dists < 750 ~ 0.25*TSDFpt2,
+    TSDF == "Y" & dists >= 250 & dists < 500 ~ 0.5*TSDFpt2,
+    TSDF == "Y" & dists < 250 ~ 1*TSDFpt2,
+    HWR == "Y" & dists >= 750 & dists <= 1000 ~ 0.1*HWRpt2,
+    HWR == "Y" & dists >= 500 & dists < 750 ~ 0.25*HWRpt2,
+    HWR == "Y" & dists >= 250 & dists < 500 ~ 0.5*HWRpt2,
+    HWR == "Y" & dists < 250 ~ 1*HWRpt2,
+    ((LQG_MA == "Y" | LQG_RCRA == "Y" | LQTU == "Y") & (is.na(TSDF) & is.na(HWR))) & 
+      dists >= 750 & dists <= 1000 ~ 0.1*2,
+    ((LQG_MA == "Y" | LQG_RCRA == "Y" | LQTU == "Y") & (is.na(TSDF) & is.na(HWR))) & 
+      dists >= 500 & dists < 750 ~ 0.25*2,
+    ((LQG_MA == "Y" | LQG_RCRA == "Y" | LQTU == "Y") & (is.na(TSDF) & is.na(HWR))) & 
+      dists >= 250 & dists < 500 ~ 0.5*2,
+    ((LQG_MA == "Y" | LQG_RCRA == "Y" | LQTU == "Y") & (is.na(TSDF) & is.na(HWR))) & 
+      dists < 250 ~ 1*2,
     .default = 1 # NEED TO ALSO WEIGHT BY DISTANCE
   ))
 # sum up values by block group
