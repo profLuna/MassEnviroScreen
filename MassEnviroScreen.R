@@ -719,11 +719,11 @@ sw_all <- ma_blkgrp23 %>%
 # dir.create("waters")
 # unzip("data/MASSGIS/il2022_shp.zip", exdir = "data/MASSGIS")
 # read in streams, rivers lines
-# IL_2022_ARC <- st_read("data/MASSGIS", "IL_2022_ARC") %>% 
-#   filter(CATEGORY == "5")
-# # read in Lakes, Estuaries
-# IL_2022_POLY <- st_read("data/MASSGIS", "IL_2022_POLY") %>% 
-#   filter(CATEGORY == "5")
+IL_2022_ARC <- st_read("data/MASSGIS", "IL_2022_ARC") %>%
+  filter(CATEGORY == "5")
+# read in Lakes, Estuaries
+IL_2022_POLY <- st_read("data/MASSGIS", "IL_2022_POLY") %>%
+  filter(CATEGORY == "5")
 # read in table of attributes
 IL_ATTAINS_2022 <- read.dbf("data/MASSGIS/IL_ATTAINS_2022.dbf") %>% 
   filter(CATEGORY == "5" & POLTNT_FLG == "Y")
@@ -760,8 +760,8 @@ IL_ATTAINS_2022 <- IL_ATTAINS_2022 %>%
   ))
 
 # # calculate distance from water body to nearest populated block - WARNING TAKES 1 HOUR 40 MIN TO RUN!
-# IL_arcs_nn <- st_nn(IL_2022_ARC, ma_blocks, k = 1, maxdist = 1000, returnDist = TRUE)
-# IL_polys_nn <- st_nn(IL_2022_POLY, ma_blocks, k = 1, maxdist = 1000, returnDist = TRUE)
+# IL_arcs_nn <- st_nn(IL_2022_ARC, ma_blocks, k = 1, maxdist = 2000, returnDist = TRUE)
+# IL_polys_nn <- st_nn(IL_2022_POLY, ma_blocks, k = 1, maxdist = 2000, returnDist = TRUE)
 # # extract distances from second list as vector
 # IL_arcs_dist <- sapply(IL_arcs_nn[[2]], "[", 1)
 # IL_polys_dist <- sapply(IL_polys_nn[[2]], "[", 1)
@@ -777,7 +777,8 @@ IL_2022_POLY <- readRDS("data/MASSGIS/IL_2022_POLY.rds")
 
 # filter based on distances, join overlapping block groups to assign GEOID, join wtih attributes, group by GEOID, and sum unique pollutants
 arc_pollutants <- IL_2022_ARC %>% 
-  filter((AU_SIZE <= 60 & dists <= 1000) | (AU_SIZE > 60 & dists < 2000)) %>% 
+  mutate(AU_SIZEkm = AU_SIZE*1.609344) %>% # convert miles to km
+  filter((AU_SIZEkm <= 100 & dists <= 1000) | (AU_SIZEkm > 100 & dists < 2000)) %>% 
   st_join(., select(ma_blkgrp23, GEOID)) %>% 
   st_drop_geometry(.) %>% 
   inner_join(IL_ATTAINS_2022, ., by = "AU_ID") %>% 
