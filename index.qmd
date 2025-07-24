@@ -42,7 +42,11 @@ pacman::p_load(tidyverse, sf, tidycensus, tigris, leaflet, leaflet.extras, leafl
 options(tigris_use_cache = TRUE)
 
 # read in MassEnviroScreen data from MassEnviroScreen.R
-MassEnviroScreen <- readRDS("MassEnviroScreen.rds")
+MassEnviroScreen <- readRDS("MassEnviroScreen.rds") %>% 
+  select(UBA, EJ, EJ_CRIT_DESC, MassEnviroScore, NAME, COSUB, 
+         PollutionBurden100, PopCharacteristics100, 
+         minorityPctE, medHHincE, medHHincMAPCT, limitEngpctE, LARName, 
+         starts_with("pop"), ends_with("PctSt"))
 
 # read in county subdivisions
 ma_cosubs <- county_subdivisions(state = "MA", cb = TRUE, year = 2023) %>% 
