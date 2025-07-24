@@ -114,30 +114,11 @@ health_tract <- read_csv("data/PLACES/PLACES__Local_Data_for_Better_Health__Cens
          SPpctileCANCER = percent_rank(`Cancer (non-skin) or melanoma among adults`)*100,
          SPpctileCOPD = percent_rank(`Chronic obstructive pulmonary disease among adults`)*100)
 
-# # load low birthweight data from MA Vital Stats. See https://www.mass.gov/info-details/birth-outcomes-data-of-massachusetts-residents 
-# lbw_cosub <- read_excel("data/MADPH/Birth_Community_Detailed_Topic_of_Massachusetts_Residents.xlsx", 
-#                         sheet = "Delivery Information") %>% 
-#   filter(`Delivery Information Topic` == "Birthweight" & 
-#            `Comparison Sub-Topic` %in% c("Low (LBW): <2500 grams", 
-#                                          "Very Low (VLBW): <1500 grams")) %>% 
-#   mutate(`Percent of live Birth` = as.numeric(`Percent of live Birth`)*100) %>% 
-#   group_by(City) %>% 
-#   summarize(LBWpct = sum(`Percent of live Birth`, na.rm = TRUE)) %>% 
-#   mutate(SPpctileLBW = percent_rank(LBWpct)*100)
-
-# RECOMMENDED ENVTL HEALTH DISPARITY INDICATOR BY EPA. see https://www.epa.gov/environmentaljustice/indicators-environmental-health-disparities
-# # load pediatric asthma from MA Environmental Public Health Tracking. See https://matracking.ehs.state.ma.us/Health-Data/Asthma/index.html
-# asthma_cosub <- read_csv("data/MADPH/pediatricAsthma2017_23.csv") %>% 
-#   filter(`School Year` %in% c("2017-2018","2022-2023")) %>% 
-#   mutate(Prevalence = as.numeric(Prevalence)) %>% 
-#   group_by(Geography) %>% 
-#   summarize(PedAsthmaPrevalence = mean(Prevalence, na.rm = TRUE)) %>% 
-#   mutate(SPpctileASTHMAped = percent_rank(PedAsthmaPrevalence)*100)
 
 # Calculate weighted average percent pediatric asthma per block group. load pediatric asthma by school by BG from MassDEP Cumulative Impact Analysis in Air Quality Permitting at https://www.mass.gov/info-details/cumulative-impact-analysis-in-air-quality-permitting#cia-guidance-and-tools-
 # associate K-12 schools with block groups within 1/2 mile
-download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/schools.zip", destfile = "data/MASSGIS/schools.zip")
-unzip("data/MASSGIS/schools.zip", exdir = "data/MASSGIS")
+# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/schools.zip", destfile = "data/MASSGIS/schools.zip")
+# unzip("data/MASSGIS/schools.zip", exdir = "data/MASSGIS")
 schools <- st_read("data/MASSGIS/Schools", "SCHOOLS_PT")
 schools_halfmile <- st_join(schools["SCHID"], ma_blkgrp23["GEOID"], 
                             join = st_is_within_distance, dist = 805)
@@ -154,35 +135,6 @@ asthma_blkgrp <- read_xlsx("data/DEP/Indicator data for cumulative impact analys
   mutate(SPpctileAsthmaPed = percent_rank(pedAsthmaPrevalence)*100) %>% 
   st_drop_geometry()
 
-
-# # load school list with associated block groups within 1/2 mile
-# DEP_schools_blkgrp <- read_xlsx("data/DEP/Indicator data for cumulative impact analysis UPDATED Jan 2025.xlsx", sheet = "Block Group-Schools") %>% 
-#   transmute(GEOID = `Block Group`, 
-#             SCHID = `SCHOOL CODE\r\n(SCHID)`)
-# # join BGs to schools and compute weighted average percentage of pediatric asthma per BG
-# asthma_blkgrp <- read_xlsx("data/DEP/Indicator data for cumulative impact analysis UPDATED Jan 2025.xlsx", skip = 1, sheet = "Pediatric Asthma by School") %>% 
-#   transmute(SCHID = `School Code`,
-#             sch_enroll = as.numeric(`Average Enrollment Count`),
-#             pedAsthmaPrevalence = as.numeric(`Pediatric Asthma Prevalence\r\n(% of students)`)) %>% 
-#   filter(!is.na(pedAsthmaPrevalence) | !is.na(sch_enroll)) %>% 
-#   left_join(., DEP_schools_blkgrp, by = "SCHID") %>% # assign BG ID to each school
-#   group_by(GEOID) %>% 
-#   summarize(pedAsthmaPrevalence = weighted.mean(pedAsthmaPrevalence, sch_enroll)) %>% 
-#   ungroup() %>% 
-#   mutate(SPpctileAsthmaPed = percent_rank(pedAsthmaPrevalence)*100)
-
-# # load myocardial infarction from MA Environmental Public Health Tracking. See https://matracking.ehs.state.ma.us/Health-Data/Asthma/index.html
-# myocardio_cosub <- read_xlsx("data/MADPH/MyoCardioInfarchospitalization2017_21per10k.xlsx") %>% 
-#   filter(str_detect(`Geo Description`, " - Average")) %>% 
-#   mutate(`Myocardio Age Adjusted Rate` = as.numeric(`Age Adjusted Rate`),
-#          SPpctileMYOC = percent_rank(`Myocardio Age Adjusted Rate`)*100)
-
-# # load ejscreen low life expectancy variable, although note that original data for that metric comes at tract level from Life Expectancy at Birth from CDC, National Center for Health Statistics https://www.cdc.gov/nchs/data-visualization/life-expectancy/index.html
-# life_blkgrp <- read_csv("data/EJSCREEN24/EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_VI.csv") %>% 
-#   filter(ST_ABBREV == "MA") %>% 
-#   select(ID, P_LIFEEXPPCT) %>% 
-#   rename_with(~str_remove(., "P_"), .cols = P_LIFEEXPPCT) %>% 
-#   rename_with(~str_c("SPpctile", .), .cols = LIFEEXPPCT)
 
 # load MADPH premature mortality rate, low birth weight, and confirmed elevated blood levels by census tract. MDPH provided an age-adjusted premature mortality rate (PMR per 100,000) by tract. Average Annual Prevalence of Males and Females with estimated confirmed blood lead levels >= 5 micrograms/decilieter in 2017 - 2021 that were between 9 and less than 48 months of age. Acquired from MassDEP Cumulative Impact Analysis in Air Quality Permitting at https://www.mass.gov/info-details/cumulative-impact-analysis-in-air-quality-permitting#cia-guidance-and-tools-
 DEP_LBW_PMR_tract <- read_xlsx("data/DEP/Indicator data for cumulative impact analysis UPDATED Jan 2025.xlsx", skip = 1, sheet = "Indicators by Tract") %>% 
@@ -206,9 +158,7 @@ ejscreen <- read_csv("data/EJSCREEN24/EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_
          DWATER, P_DWATER) %>% 
   rename_with(function(x) {gsub("P_", "EXPpctile", x)}) %>% 
   mutate(across(PM25:EXPpctileDWATER, ~replace_na(.x, 0)))
-  # select(ID, P_PM25, P_OZONE, P_DSLPM, P_NO2, P_PTRAF, P_RSEI_AIR, P_DWATER) %>% 
-  # rename_with(~str_remove(., "P_"), .cols = P_PM25:P_DWATER) %>% 
-  # rename_with(~str_c("EXPpctile", .), .cols = PM25:DWATER)
+
 
 # Use EPA's 2020 AirToxScreen total cancer risk at block level and aggregate to block groups. See https://www.epa.gov/AirToxScreen/2020-airtoxscreen-assessment-results
 airtox2020_blkgrp <- read_xlsx("data/EPA/Region1_CancerRisk_by_block_srcgrp.xlsx") %>% 
@@ -237,31 +187,8 @@ airtox2019_blkgrp <- read_xlsx("data/EPA/2019_National_allHI_byTract.xlsx") %>%
   st_drop_geometry(.)
 
 
-# # Children's Lead Risk from Housing. Percentage of households within a census tract with likelihood of lead-based paint (LBP) hazards from the age of housing combined with the percentage of households that are both low-income (household income less than 80% of the county median family income) and have children under 6 years old. HERE WE USE HUD CHAS (Comprehensive Housing Affordability Strategy) data at Census tract level. See https://www.huduser.gov/portal/datasets/cp.html DIFFERENT FROM CALENVIROSCREEN METHOD. METRIC HERE IS HOUSING UNIT STRUCTURE BUILT BEFORE 1979 AND LESS THAN 80% HUD area median family income AND CHILDREN 6 OR YOUNGER. 
-# blrisk_tract <- read_csv("data/CHAS/140/Table13.csv") %>% 
-#   filter(st == "25") %>% 
-#   transmute(tract = paste0(st,cnty,tract), 
-#             blrisk = (T13_est21 + T13_est24 + T13_est27 + T13_est37 + T13_est40 + T13_est43 + 
-#                          T13_est70 + T13_est73 + T13_est76 + T13_est86 + T13_est89 + 
-#                         T13_est92)/T13_est1 * 100,
-#             EXPpctileBLRISK = percent_rank(blrisk)*100)
-
-
 ## Environmental Effects Indicators
 # Weighted sum of sites undergoing cleanup actions by governmental authorities or by property owners. 
-# read in MassDEP BWSC Downloadable Sites List from https://www.mass.gov/info-details/downloadable-contaminated-site-lists
-# release.dbf - Primary release info
-# actions.dbf - Actions that occurred against releases
-# chemical.dbf - Chemicals that were released
-# location.dbf - Location type for a release
-# source.dbf - Sources of the release
-# unzip("Release.zip")
-# LOCATION <- read.dbf("LOCATION.DBF")
-# RELEASE <- read.dbf("RELEASE.DBF")
-# SOURCE <- read.dbf("SOURCE.DBF")
-# ACTION <- read.dbf("ACTION.DBF")
-# CHEMICAL <- read.dbf("CHEMICAL.DBF")
-
 # Load census blocks with population
 # census2020 <- load_variables(year = 2020, dataset = "pl")
 ma_blocks <- get_decennial(geography = "block", year = 2020, state = "MA", 
@@ -581,55 +508,55 @@ BWPMAJOR_PT <- BWPMAJOR_PT %>%
 
 # Acquire MassDEP Solid Waste Diversion and Disposal layer
 # Solid Waste
-download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/solidwaste.zip", "data/MASSGIS/solidwaste.zip")
-unzip("data/MASSGIS/solidwaste.zip", exdir = "data/MASSGIS")
-# read in land disposal solid waste polygons
-sw_poly <- st_read("data/MASSGIS", "SW_LD_POLY")
-# read in handling facilities: woodwaste, compost, other site points
-sw_hf_wwcooth <- st_read("data/MASSGIS", "BWP_PT_HF_WWCOOTH")
-# read in handling facilities: large transfer stations, 50 tons or more/day site points
-sw_hf_transfer <- st_read("data/MASSGIS", "BWP_PT_HF_TRANSFER")
-# read in handling facilities: small transfer stations < 50 tons/day site points
-sw_hf_transfer_sm <- st_read("data/MASSGIS", "BWP_PT_HF_TRANS_SM")
-# read in handling facilities: construction & demolition processors site points
-sw_hf_CD_PROC <- st_read("data/MASSGIS", "BWP_PT_HF_CD_PROC")
-# read in Recycling, Composting and other waste Conversion Operations site points
-sw_recyc_conv <- st_read("data/MASSGIS", "BWP_PT_OPX_RECY_CONV")
-# read in active combustion facilities site points
-sw_combust <- st_read("data/MASSGIS", "BWP_PT_COMBUSTION")
-# read in inactive or historic combustion facilities site points
-sw_combust_inact <- st_read("data/MASSGIS", "BWP_PT_COMBUSTION_HISTORIC")
-# combine point files
-sw_pt <- sw_combust %>% 
-  mutate(CLASS_TYPE = "COMBUST", .after = REGION)
-sw_pt <- sw_combust_inact %>% 
-  mutate(CLASS_TYPE = "COMBUST INACTIVE", .after = REGION) %>% 
-  bind_rows(sw_pt, .)
-sw_pt <- sw_hf_CD_PROC %>% 
-  mutate(CLASS_TYPE = "HF CD PROC", .after = REGION) %>% 
-  bind_rows(sw_pt, .)
-sw_pt <- sw_hf_transfer %>% 
-  mutate(CLASS_TYPE = "HF TRANSFER", .after = REGION) %>% 
-  bind_rows(sw_pt, .)
-sw_pt <- sw_hf_transfer_sm %>% 
-  mutate(CLASS_TYPE = "HF TRANSFER SM", .after = REGION) %>% 
-  bind_rows(sw_pt, .)
-sw_pt <- sw_hf_wwcooth %>% 
-  bind_rows(sw_pt, .)
-sw_pt <- sw_recyc_conv %>% 
-  bind_rows(sw_pt, .)
-# calculate distance from SW to nearest neighboring block within 1000m
-sw_poly_nn <- st_nn(sw_poly, ma_blocks, k = 1, maxdist = 1000, returnDist = TRUE)
-sw_pt_nn <- st_nn(sw_pt, ma_blocks, k = 1, maxdist = 1000, returnDist = TRUE)
-# extract distances from second list as vector
-sw_poly_dist <- sapply(sw_poly_nn[[2]], "[", 1)
-sw_pt_dist <- sapply(sw_pt_nn[[2]], "[", 1)
-# bind distances
-sw_poly$dists <- sw_poly_dist
-sw_pt$dists <- sw_pt_dist
-# save object with dists to avoid having to repeat
-saveRDS(sw_poly, file = "data/MASSGIS/sw_poly.rds")
-saveRDS(sw_pt, file = "data/MASSGIS/sw_pt.rds")
+# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/solidwaste.zip", "data/MASSGIS/solidwaste.zip")
+# unzip("data/MASSGIS/solidwaste.zip", exdir = "data/MASSGIS")
+# # read in land disposal solid waste polygons
+# sw_poly <- st_read("data/MASSGIS", "SW_LD_POLY")
+# # read in handling facilities: woodwaste, compost, other site points
+# sw_hf_wwcooth <- st_read("data/MASSGIS", "BWP_PT_HF_WWCOOTH")
+# # read in handling facilities: large transfer stations, 50 tons or more/day site points
+# sw_hf_transfer <- st_read("data/MASSGIS", "BWP_PT_HF_TRANSFER")
+# # read in handling facilities: small transfer stations < 50 tons/day site points
+# sw_hf_transfer_sm <- st_read("data/MASSGIS", "BWP_PT_HF_TRANS_SM")
+# # read in handling facilities: construction & demolition processors site points
+# sw_hf_CD_PROC <- st_read("data/MASSGIS", "BWP_PT_HF_CD_PROC")
+# # read in Recycling, Composting and other waste Conversion Operations site points
+# sw_recyc_conv <- st_read("data/MASSGIS", "BWP_PT_OPX_RECY_CONV")
+# # read in active combustion facilities site points
+# sw_combust <- st_read("data/MASSGIS", "BWP_PT_COMBUSTION")
+# # read in inactive or historic combustion facilities site points
+# sw_combust_inact <- st_read("data/MASSGIS", "BWP_PT_COMBUSTION_HISTORIC")
+# # combine point files
+# sw_pt <- sw_combust %>% 
+#   mutate(CLASS_TYPE = "COMBUST", .after = REGION)
+# sw_pt <- sw_combust_inact %>% 
+#   mutate(CLASS_TYPE = "COMBUST INACTIVE", .after = REGION) %>% 
+#   bind_rows(sw_pt, .)
+# sw_pt <- sw_hf_CD_PROC %>% 
+#   mutate(CLASS_TYPE = "HF CD PROC", .after = REGION) %>% 
+#   bind_rows(sw_pt, .)
+# sw_pt <- sw_hf_transfer %>% 
+#   mutate(CLASS_TYPE = "HF TRANSFER", .after = REGION) %>% 
+#   bind_rows(sw_pt, .)
+# sw_pt <- sw_hf_transfer_sm %>% 
+#   mutate(CLASS_TYPE = "HF TRANSFER SM", .after = REGION) %>% 
+#   bind_rows(sw_pt, .)
+# sw_pt <- sw_hf_wwcooth %>% 
+#   bind_rows(sw_pt, .)
+# sw_pt <- sw_recyc_conv %>% 
+#   bind_rows(sw_pt, .)
+# # calculate distance from SW to nearest neighboring block within 1000m
+# sw_poly_nn <- st_nn(sw_poly, ma_blocks, k = 1, maxdist = 1000, returnDist = TRUE)
+# sw_pt_nn <- st_nn(sw_pt, ma_blocks, k = 1, maxdist = 1000, returnDist = TRUE)
+# # extract distances from second list as vector
+# sw_poly_dist <- sapply(sw_poly_nn[[2]], "[", 1)
+# sw_pt_dist <- sapply(sw_pt_nn[[2]], "[", 1)
+# # bind distances
+# sw_poly$dists <- sw_poly_dist
+# sw_pt$dists <- sw_pt_dist
+# # save object with dists to avoid having to repeat
+# saveRDS(sw_poly, file = "data/MASSGIS/sw_poly.rds")
+# saveRDS(sw_pt, file = "data/MASSGIS/sw_pt.rds")
 # read in objects
 sw_poly <- readRDS("data/MASSGIS/sw_poly.rds")
 sw_pt <- readRDS("data/MASSGIS/sw_pt.rds")
@@ -718,18 +645,9 @@ sw_all <- ma_blkgrp23 %>%
 # download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/il2022_shp.zip", "data/MASSGIS/il2022_shp.zip")
 # dir.create("waters")
 # unzip("data/MASSGIS/il2022_shp.zip", exdir = "data/MASSGIS")
-# read in streams, rivers lines
-IL_2022_ARC <- st_read("data/MASSGIS", "IL_2022_ARC") %>%
-  filter(CATEGORY == "5")
-# read in Lakes, Estuaries
-IL_2022_POLY <- st_read("data/MASSGIS", "IL_2022_POLY") %>%
-  filter(CATEGORY == "5")
-# read in table of attributes
-IL_ATTAINS_2022 <- read.dbf("data/MASSGIS/IL_ATTAINS_2022.dbf") %>% 
-  filter(CATEGORY == "5" & POLTNT_FLG == "Y")
-
-# recode causes to identify unique pollutants
-IL_ATTAINS_2022 <- IL_ATTAINS_2022 %>% 
+# read in table of attributes and recode causes to identify unique pollutants
+IL_ATTAINS_2022 <- read.dbf("data/MASSGIS/IL_ATTAINS_2022.dbf") %>%  
+  filter(CATEGORY == "5" & POLTNT_FLG == "Y") %>% 
   mutate(CAUSE_UNIQUE = case_when(
     str_detect(CAUSE, "COLI|FECAL|ENTEROCOCCUS")  ~ "E. COLI",
     str_detect(CAUSE, "FLOCCULANT|ODOR|SCUM|TRASH|SEWAGE") ~ "SEWAGE",
@@ -760,6 +678,12 @@ IL_ATTAINS_2022 <- IL_ATTAINS_2022 %>%
   ))
 
 # # calculate distance from water body to nearest populated block - WARNING TAKES 1 HOUR 40 MIN TO RUN!
+# # read in streams, rivers lines
+# IL_2022_ARC <- st_read("data/MASSGIS", "IL_2022_ARC") %>%
+#   filter(CATEGORY == "5")
+# # read in Lakes, Estuaries
+# IL_2022_POLY <- st_read("data/MASSGIS", "IL_2022_POLY") %>%
+#   filter(CATEGORY == "5")
 # IL_arcs_nn <- st_nn(IL_2022_ARC, ma_blocks, k = 1, maxdist = 2000, returnDist = TRUE)
 # IL_polys_nn <- st_nn(IL_2022_POLY, ma_blocks, k = 1, maxdist = 2000, returnDist = TRUE)
 # # extract distances from second list as vector
@@ -876,8 +800,6 @@ heat <- read_csv("data/CDC/data_134739.csv") %>%
 MassEnviroScreen <- ma_blkgrp23 %>% 
   select(GEOID, GEOID_TRACT, COSUB, COUNTYFP) %>% 
   left_join(., ejscreen, by = c("GEOID" = "ID")) %>% 
-  # left_join(., select(blrisk_tract, tract, blrisk, EXPpctileBLRISK), 
-  #           by = c("GEOID_TRACT" = "tract")) %>% 
   left_join(., select(airtox2020_blkgrp, GEOID, CancerRisk, EXPpctileCancerRisk), 
             by = "GEOID") %>% 
   left_join(., select(airtox2019_blkgrp, GEOID, `Respiratory HI`, EXPpctileRespHI), 
@@ -896,10 +818,6 @@ MassEnviroScreen <- ma_blkgrp23 %>%
             by = c("GEOID_TRACT" = "LocationID")) %>% 
   left_join(., select(asthma_blkgrp, GEOID, pedAsthmaPrevalence, SPpctileAsthmaPed), 
             by = "GEOID") %>% 
-  # left_join(., select(lbw_cosub, City, LBWpct, SPpctileLBW), by = c("COSUB" = "City")) %>% 
-  # left_join(., select(asthma_cosub, Geography, PedAsthmaPrevalence, SPpctileASTHMAped), 
-  #           by = c("COSUB" = "Geography")) %>% 
-  # left_join(., life_blkgrp, by = c("GEOID" = "ID")) %>% 
   left_join(., select(DEP_LBW_PMR_tract, GEOID_TRACT, BLL, SPpctileBLL, LBW, SPpctileLBW, PMR, 
                       SPpctilePMR),
             by = "GEOID_TRACT") %>% 
