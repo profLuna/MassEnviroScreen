@@ -284,7 +284,7 @@ Within the MassEnviroScreen score map, clicking on individual census block group
 
 ### Model indicators
 
-The MassEnviroScreen score model is computed from 30 statewide environmental, socioeconomic, and health indicators. These indicators are listed in @tbl-indicators below. Details and data sources for model indicators can be found in the [MassEnviroScreen Documentation](MassEnviroScreenDocumentation.pdf).
+The MassEnviroScreen score model is computed from 30 statewide environmental, socioeconomic, and health indicators. These indicators are listed in @tbl-indicators below. Details and data sources for model indicators can be found in the [MassEnviroScreen Documentation](MassEnviroScreenDocumentation.pdf). The complete code for generating MassEnviroScreen is available at [https://github.com/profLuna/MassEnviroScreen](https://github.com/profLuna/MassEnviroScreen). A CSV file with indicator values for all census block groups is available [here](https://github.com/profLuna/MassEnviroScreen/blob/main/MassEnviroScreenUBAs.csv). 
 
 ```{r}
 #| echo: false
@@ -348,7 +348,7 @@ Both approaches, however, are based on important decisions about which indicator
 
 ### Coverage of the state
 
-Under the current Massachusetts Environmental Justice Population definition `{r} round(sum(MassEnviroScreen$EJ == "Yes")/nrow(MassEnviroScreen)*100,1)`% of Massachusetts block groups are classified as environmental justice communities. These environmental justice block groups occur in `{r} length(unique(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",]$COSUB))` (`{r} round(length(unique(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",]$COSUB))/351*100,1)`%) of Massachusetts municipalities (based on American Community Survey 2023 5-year estimates). By contrast, `{r} round(nrow(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",])/nrow(MassEnviroScreen)*100,1)`% of Massachusetts block groups meet the criteria for MassEnviroScreen's Unfairly Burdened Areas. The latter occur in `{r} length(unique(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",]$COSUB))` (`{r} round(length(unique(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",]$COSUB))/351*100,1)`%) of Massachusetts municipalities. A breakdown of the number and percentage of census block groups meeting the various criteria that define a an Unfairly Burdened Area are displayed in @tbl-criteria. Note that percentages do not total to 100% because block groups may meet multiple criteria. 
+Under the current Massachusetts Environmental Justice Population definition `{r} round(sum(MassEnviroScreen$EJ == "Yes")/nrow(MassEnviroScreen)*100,1)`% of Massachusetts block groups are classified as environmental justice communities. These environmental justice block groups occur in `{r} length(unique(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",]$COSUB))` (`{r} round(length(unique(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",]$COSUB))/351*100,1)`%) of Massachusetts municipalities (based on American Community Survey 2023 5-year estimates). By contrast, `{r} round(nrow(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",])/nrow(MassEnviroScreen)*100,1)`% of Massachusetts block groups meet the criteria for MassEnviroScreen's Unfairly Burdened Areas. The latter occur in `{r} length(unique(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",]$COSUB))` (`{r} round(length(unique(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",]$COSUB))/351*100,1)`%) of Massachusetts municipalities. A breakdown of the number and percentage of census block groups meeting the various criteria that define a an Unfairly Burdened Area are displayed in @tbl-criteria. Note that percentages do not total to 100% because block groups may meet multiple criteria.
 
 ```{r}
 #| echo: false
@@ -408,7 +408,6 @@ data.frame(Indicator = c("MassEnviroScreen Score > 75%tile", "Median Household I
         align = "l") %>% 
   kable_styling(bootstrap_options = c("striped", "hover"))
 ```
-
 
 ### Overlap with EJ criteria
 
