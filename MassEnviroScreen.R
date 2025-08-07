@@ -115,25 +115,13 @@ health_tract <- read_csv("data/PLACES/PLACES__Local_Data_for_Better_Health__Cens
          SPpctileCOPD = percent_rank(`Chronic obstructive pulmonary disease among adults`)*100)
 
 
-# Calculate weighted average percent pediatric asthma per block group. load pediatric asthma by school by BG from MassDEP Cumulative Impact Analysis in Air Quality Permitting at https://www.mass.gov/info-details/cumulative-impact-analysis-in-air-quality-permitting#cia-guidance-and-tools-
-# associate K-12 schools with block groups within 1/2 mile
-# download.file("https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/schools.zip", destfile = "data/MASSGIS/schools.zip")
-# unzip("data/MASSGIS/schools.zip", exdir = "data/MASSGIS")
-schools <- st_read("data/MASSGIS/Schools", "SCHOOLS_PT")
-schools_halfmile <- st_join(schools["SCHID"], ma_blkgrp23["GEOID"], 
-                            join = st_is_within_distance, dist = 805)
-# join to schools with enrollment and ashtma data and calc weighted average by block group
-asthma_blkgrp <- read_xlsx("data/DEP/Indicator data for cumulative impact analysis UPDATED Jan 2025.xlsx", skip = 1, sheet = "Pediatric Asthma by School") %>% 
-  transmute(SCHID = `School Code`,
-            sch_enroll = as.numeric(`Average Enrollment Count`),
-            pedAsthmaPrevalence = as.numeric(`Pediatric Asthma Prevalence\r\n(% of students)`)) %>% 
-  filter(!is.na(pedAsthmaPrevalence) | !is.na(sch_enroll)) %>% 
-  inner_join(schools_halfmile, ., by = "SCHID") %>% # assign BG ID to each school
-  group_by(GEOID) %>% 
-  summarize(pedAsthmaPrevalence = weighted.mean(pedAsthmaPrevalence, sch_enroll)) %>% 
-  ungroup() %>% 
-  mutate(SPpctileAsthmaPed = percent_rank(pedAsthmaPrevalence)*100) %>% 
-  st_drop_geometry()
+# read in pediatric asthma from DEP. weighted value by block group. 
+asthma_blkgrp <- read_xlsx("data/DEP/asthma_bg_summary_080125.xlsx", sheet = "Sheet1") %>% 
+  transmute(GEOID = GEOID,
+            pedAsthmaPrevalence = weighted_prevalence,
+            n_schools = n_schools,
+            pedAsthmaPctSt = PctSt*100,
+            SPpctileAsthmaPed = percent_rank(pedAsthmaPrevalence)*100)
 
 
 # load MADPH premature mortality rate, low birth weight, and confirmed elevated blood levels by census tract. MDPH provided an age-adjusted premature mortality rate (PMR per 100,000) by tract. Average Annual Prevalence of Males and Females with estimated confirmed blood lead levels >= 5 micrograms/decilieter in 2017 - 2021 that were between 9 and less than 48 months of age. Acquired from MassDEP Cumulative Impact Analysis in Air Quality Permitting at https://www.mass.gov/info-details/cumulative-impact-analysis-in-air-quality-permitting#cia-guidance-and-tools-
@@ -816,7 +804,8 @@ MassEnviroScreen <- ma_blkgrp23 %>%
                       `Cancer (non-skin) or melanoma among adults`, 
                       SPpctileCANCER),
             by = c("GEOID_TRACT" = "LocationID")) %>% 
-  left_join(., select(asthma_blkgrp, GEOID, pedAsthmaPrevalence, SPpctileAsthmaPed), 
+  left_join(., select(asthma_blkgrp, GEOID, pedAsthmaPrevalence, pedAsthmaPctSt, 
+                      SPpctileAsthmaPed), 
             by = "GEOID") %>% 
   left_join(., select(DEP_LBW_PMR_tract, GEOID_TRACT, BLL, SPpctileBLL, LBW, SPpctileLBW, PMR, 
                       SPpctilePMR),
@@ -875,8 +864,7 @@ MassEnviroScreen <- block_groups(state = "MA", year = 2023, cb = TRUE) %>%
   left_join(., select(MA_EJ23, GEOID, NAME, minorityPctE, medHHincE, medHHincMA, medHHincMUNIPCT, medHHincMUNIE, medHHincMUNIPCT, medHHincMAPCT, EJ_CRITERIA, EJ:EJ_CRIT_DESC), by = "GEOID") %>% 
   st_join(., st_transform(BIA, crs = st_crs(.))) %>% 
   replace_na(list(LARName = "None")) %>% 
-  mutate(pedAsthmaPctSt = pedAsthmaPrevalence/12.23*100, # state average from DPH
-         LBWPctSt = LBW/2.17*100,
+  mutate(LBWPctSt = LBW/2.17*100, # state average from DPH
          BLLPctSt = BLL/18.4*100,
          PMRPctSt = PMR/292.5*100,
          CHDPctSt = `Coronary heart disease among adults`/4.6*100,
