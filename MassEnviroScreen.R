@@ -775,13 +775,48 @@ flood <- anti_join(NRI, st_drop_geometry(flood), by = "GEOID") %>%
   mutate(pctFldArea = fldArea/Area*100,
          CLIMpctilFLD = percent_rank(pctFldArea)*100)
 
-# Heat. Average number of days between May and September from 2019 through 2023 in which daily high temperature exceeded the 90th percentile of historical daily high temperatures. Data Source: National Environmental Public Health Tracking Network via the U.S. Centers for Disease Control (CDC), Heat & Heat Related Illness (HRI), Historical Temperature & Heat Index, 2019-2023 https://ephtracking.cdc.gov/ . Query: Heat & Health-Related Illness (HRI > Historical Temperature & Heat Index > Annual Number of Extreme Heat Days > MA Census Tracts > 2019 - 2023 > Heat Metric Max Daily Temp > Relative Threshold 90th Percentile)
-heat <- read_csv("data/CDC/data_134739.csv") %>% 
-  mutate(CensusTract = as.character(CensusTract)) %>% 
-  group_by(CensusTract) %>% 
-  summarize(heatMean = mean(Value, na.rm = TRUE)) %>% 
-  mutate(CLIMpctilHEAT = percent_rank(heatMean)*100)
-
+# Heat. Count of days between May and September from 2020 through 2024 in which daily high temperature exceeded 85F - threshold identified by MA DPH for ED visits from heat. Data Source: PRISM Group, Oregon State University, https://prism.oregonstate.edu, data created November 2020 through April 2025, accessed 9 Aug 2025. Data acquired at 800m resolution via PRISM package.
+# # load `prism` package for downloading data
+# library(prism)
+# # set download folder
+# prism_set_dl_dir("data/PRISM")
+# # Acquire PRISM daily maximum temp data for 2020 - 2024, in summer increments (May - Sep). Note that the 'service' parameter is necessary to get 800m resolution, otherwise defaults to 4k. 
+# # loop through years of interest; CAUTION takes 1 - 2 hours and ~30GB of space
+# for(i in 2020:2024) {
+#   get_prism_dailys(type = "tmax",
+#                    minDate = paste0(i, "-05-01"),
+#                    maxDate = paste0(i, "-10-01"),
+#                    keepZip = FALSE,
+#                    service = "https://services.nacse.org/prism/data/get/us/800m")
+# }
+# # assemble file names and full paths to tifs
+# filenames <- dir("data/PRISM/", recursive = TRUE, full.names = TRUE, pattern = "\\.tif$")
+# # convert to multi-layer Spatraster and stack them
+# tmaxStack <- rast(filenames)
+# # crop stack to MA before converting values and processing
+# download block groups in NAD83 to match raster CRS; don't try to reproject!
+ma_blkgrpNAD83 <- block_groups(state = "MA", year = 2023, cb = TRUE) %>%
+  filter(!st_is_empty(.))
+# # crop to MA
+# tmaxStack <- tmaxStack %>% 
+#   crop(., vect(ma_blkgrpNAD83))
+# # save absolute tmax values for MA; discard original data for rest of CONUS
+# saveRDS(tmaxStack, "data/PRISM/tmaxStack20202024.rds")
+# read in cropped tmax values to save time
+tmaxStack <- readRDS("data/PRISM/tmaxStack20202024.rds")
+# convert values below 85F to 0 and values above 85F to 1. Use Celsius. (85-32)/1.8 = 29.44
+tmaxStack[tmaxStack < 29.44] <- 0
+tmaxStack[tmaxStack >= 29.44] <- 1
+# sum across layers to get count of days per pixel
+tmaxStack <- app(tmaxStack, fun = "sum", na.rm = TRUE)
+# calculate mean count of days over 85F per BG
+heat <- tmaxStack %>% 
+  extract(., vect(ma_blkgrpNAD83), fun = mean, na.rm = TRUE, bind = TRUE) %>% 
+  st_as_sf(.) %>% 
+  transmute(GEOID = GEOID, 
+            Heatmean = sum,
+            CLIMpctilHEAT = percent_rank(Heatmean)*100) %>% 
+  st_drop_geometry(.)
 
 
 # BRING IT ALL TOGETHER
@@ -819,8 +854,7 @@ MassEnviroScreen <- ma_blkgrp23 %>%
             by = c("COUNTYFP" = "CountyFIPS")) %>% 
   left_join(., select(fire, GEOID, WHPmean, CLIMpctilWHP), by = "GEOID") %>% 
   left_join(., select(flood, GEOID, pctFldArea, CLIMpctilFLD), by = "GEOID") %>% 
-  left_join(., select(heat, CensusTract, heatMean, CLIMpctilHEAT), 
-            by = c("GEOID_TRACT" = "CensusTract")) %>% 
+  left_join(., select(heat, GEOID, Heatmean, CLIMpctilHEAT), by = "GEOID") %>% 
   mutate(across(c(starts_with("EXPpctile"), starts_with("EFFCTpctile"), 
                   starts_with("CLIMpctil")), 
                 ~replace_na(.x, 0))) %>% 
