@@ -61,7 +61,7 @@ WHPmean,Wildfire Hazard Potential Risk Score,USDA,https://www.fs.usda.gov/rds/ar
 CLIMpctilWHP,Wildfire Hazard Potential Risk Score statewide percentile,USDA,,,,,2023
 pctFldArea,Percentage of area with 1% annual chance flood risk,FEMA NFHL; FEMA Q3,https://www.mass.gov/info-details/massgis-data-fema-national-flood-hazard-layer,https://www.mass.gov/info-details/massgis-data-fema-q3-flood-zones-from-paper-firms,https://hazards.fema.gov/nri/data-resources,,Variable
 CLIMpctilFLD,Percentage of area with 1% annual chance flood risk statewide percentile,FEMA NFHL; FEMA Q3,,,,,Variable
-heatMean,Number of summer days with daily high temperature exceeding 85F,"PRISM Group, Oregon State University",https://prism.oregonstate.edu/,,,,2020-2024
+heatMean,Number of summer days with daily high temperature exceeding 85F,"PRISM Group, Oregon State University",https://prism.oregonstate.edu/,,,,2015-2024
 CLIMpctilHEAT,Number of summer days with daily high temperature exceeding 85F statewide percentile,"PRISM Group, Oregon State University",,,,,2020-2024
 AvgExposure,Average of exposure indicator percentiles,,,,,,
 AvgEffect,Average of effects indicator percentiles,,,,,,

@@ -780,9 +780,9 @@ flood <- anti_join(NRI, st_drop_geometry(flood), by = "GEOID") %>%
 # library(prism)
 # # set download folder
 # prism_set_dl_dir("data/PRISM")
-# # Acquire PRISM daily maximum temp data for 2020 - 2024, in summer increments (May - Sep). Note that the 'service' parameter is necessary to get 800m resolution, otherwise defaults to 4k. 
+# # Acquire PRISM daily maximum temp data for 2015 - 2024, in summer increments (May - Sep). Note that the 'service' parameter is necessary to get 800m resolution, otherwise defaults to 4k. 
 # # loop through years of interest; CAUTION takes 1 - 2 hours and ~30GB of space
-# for(i in 2020:2024) {
+# for(i in 2015:2024) {
 #   get_prism_dailys(type = "tmax",
 #                    minDate = paste0(i, "-05-01"),
 #                    maxDate = paste0(i, "-10-01"),
@@ -801,9 +801,9 @@ ma_blkgrpNAD83 <- block_groups(state = "MA", year = 2023, cb = TRUE) %>%
 # tmaxStack <- tmaxStack %>% 
 #   crop(., vect(ma_blkgrpNAD83))
 # # save absolute tmax values for MA; discard original data for rest of CONUS
-# saveRDS(tmaxStack, "data/PRISM/tmaxStack20202024.rds")
+# saveRDS(tmaxStack, "data/PRISM/tmaxStack20152024.rds")
 # read in cropped tmax values to save time
-tmaxStack <- readRDS("data/PRISM/tmaxStack20202024.rds")
+tmaxStack <- readRDS("data/PRISM/tmaxStack20152024.rds")
 # convert values below 85F to 0 and values above 85F to 1. Use Celsius. (85-32)/1.8 = 29.44
 tmaxStack[tmaxStack < 29.44] <- 0
 tmaxStack[tmaxStack >= 29.44] <- 1
