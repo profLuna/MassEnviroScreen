@@ -775,13 +775,13 @@ flood <- anti_join(NRI, st_drop_geometry(flood), by = "GEOID") %>%
   mutate(pctFldArea = fldArea/Area*100,
          CLIMpctilFLD = percent_rank(pctFldArea)*100)
 
-# Heat. Count of days between May and September from 2020 through 2024 in which daily high temperature exceeded 85F - threshold identified by MA DPH for ED visits from heat. Data Source: PRISM Group, Oregon State University, https://prism.oregonstate.edu, data created November 2020 through April 2025, accessed 9 Aug 2025. Data acquired at 800m resolution via PRISM package.
+# Heat. Count of days between May and September from 2015 through 2024 in which daily high temperature exceeded 85F - threshold identified by MA DPH for ED visits from heat. Data Source: PRISM Group, Oregon State University, https://prism.oregonstate.edu, data created November 2015 through April 2025, accessed 9 Aug 2025. Data acquired at 800m resolution via PRISM package.
 # # load `prism` package for downloading data
 # library(prism)
 # # set download folder
 # prism_set_dl_dir("data/PRISM")
 # # Acquire PRISM daily maximum temp data for 2015 - 2024, in summer increments (May - Sep). Note that the 'service' parameter is necessary to get 800m resolution, otherwise defaults to 4k. 
-# # loop through years of interest; CAUTION takes 1 - 2 hours and ~30GB of space
+# # loop through years of interest; CAUTION takes ~2 hours and ~67GB of space
 # for(i in 2015:2024) {
 #   get_prism_dailys(type = "tmax",
 #                    minDate = paste0(i, "-05-01"),
