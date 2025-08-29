@@ -93,7 +93,7 @@ MES75PopUp <- paste0(MassEnviroScreen75$NAME, "<br/>",
                      MassEnviroScreen75$popBLL, if_else(!is.na(MassEnviroScreen75$BLLPctSt), paste0(round(MassEnviroScreen75$BLLPctSt,1),"%"), "NA"), "<br/>",
                      MassEnviroScreen75$popLBW, if_else(!is.na(MassEnviroScreen75$LBWPctSt), paste0(round(MassEnviroScreen75$LBWPctSt,1),"%"), "NA"), "<br/>",
                      MassEnviroScreen75$popPMR, if_else(!is.na(MassEnviroScreen75$PMRPctSt), paste0(round(MassEnviroScreen75$PMRPctSt,1),"%"), "NA"), "<br/>",
-                     MassEnviroScreen75$popCHD, if_else(!is.na(MassEnviroScreen75$CHDPctSt), paste0(round(MassEnviroScreen75$CHDPctSt,1),"%"), "NA"), "<br/>",
+                     # MassEnviroScreen75$popCHD, if_else(!is.na(MassEnviroScreen75$CHDPctSt), paste0(round(MassEnviroScreen75$CHDPctSt,1),"%"), "NA"), "<br/>",
                      MassEnviroScreen75$popPM25, if_else(!is.na(MassEnviroScreen75$PM25PctSt), paste0(round(MassEnviroScreen75$PM25PctSt,1),"%"), "NA"), "<br/>",
                      MassEnviroScreen75$popOZONE, if_else(!is.na(MassEnviroScreen75$OZONEPctSt), paste0(round(MassEnviroScreen75$OZONEPctSt,1),"%"), "NA"))
 
@@ -113,7 +113,7 @@ MAEJpopup <- paste0(MA_EJ23$NAME, "<br/>",
                      MA_EJ23$popBLL, if_else(!is.na(MA_EJ23$BLLPctSt), paste0(round(MA_EJ23$BLLPctSt,1),"%"), "NA"), "<br/>",
                      MA_EJ23$popLBW, if_else(!is.na(MA_EJ23$LBWPctSt), paste0(round(MA_EJ23$LBWPctSt,1),"%"), "NA"), "<br/>",
                      MA_EJ23$popPMR, if_else(!is.na(MA_EJ23$PMRPctSt), paste0(round(MA_EJ23$PMRPctSt,1),"%"), "NA"), "<br/>",
-                     MA_EJ23$popCHD, if_else(!is.na(MA_EJ23$CHDPctSt), paste0(round(MA_EJ23$CHDPctSt,1),"%"), "NA"), "<br/>",
+                     # MA_EJ23$popCHD, if_else(!is.na(MA_EJ23$CHDPctSt), paste0(round(MA_EJ23$CHDPctSt,1),"%"), "NA"), "<br/>",
                      MA_EJ23$popPM25, if_else(!is.na(MA_EJ23$PM25PctSt), paste0(round(MA_EJ23$PM25PctSt,1),"%"), "NA"), "<br/>",
                      MA_EJ23$popOZONE, if_else(!is.na(MA_EJ23$OZONEPctSt), paste0(round(MA_EJ23$OZONEPctSt,1),"%"), "NA"))
 
@@ -133,7 +133,7 @@ MESscorePopup <- paste0(MassEnviroScreen$NAME, "<br/>",
                      MassEnviroScreen$popBLL, if_else(!is.na(MassEnviroScreen$BLLPctSt), paste0(round(MassEnviroScreen$BLLPctSt,1),"%"), "NA"), "<br/>",
                      MassEnviroScreen$popLBW, if_else(!is.na(MassEnviroScreen$LBWPctSt), paste0(round(MassEnviroScreen$LBWPctSt,1),"%"), "NA"), "<br/>",
                      MassEnviroScreen$popPMR, if_else(!is.na(MassEnviroScreen$PMRPctSt), paste0(round(MassEnviroScreen$PMRPctSt,1),"%"), "NA"), "<br/>",
-                     MassEnviroScreen$popCHD, if_else(!is.na(MassEnviroScreen$CHDPctSt), paste0(round(MassEnviroScreen$CHDPctSt,1),"%"), "NA"), "<br/>",
+                     # MassEnviroScreen$popCHD, if_else(!is.na(MassEnviroScreen$CHDPctSt), paste0(round(MassEnviroScreen$CHDPctSt,1),"%"), "NA"), "<br/>",
                      MassEnviroScreen$popPM25, if_else(!is.na(MassEnviroScreen$PM25PctSt), paste0(round(MassEnviroScreen$PM25PctSt,1),"%"), "NA"), "<br/>",
                      MassEnviroScreen$popOZONE, if_else(!is.na(MassEnviroScreen$OZONEPctSt), paste0(round(MassEnviroScreen$OZONEPctSt,1),"%"), "NA"))
 
@@ -380,9 +380,9 @@ BLLs <- MassEnviroScreen %>%
 PMRs <- MassEnviroScreen %>% 
   filter(PMRPctSt > 200) %>% 
   nrow()
-CHDs <- MassEnviroScreen %>% 
-  filter(CHDPctSt > 200) %>% 
-  nrow()
+# CHDs <- MassEnviroScreen %>% 
+#   filter(CHDPctSt > 200) %>% 
+#   nrow()
 OZONEs <- MassEnviroScreen %>% 
   filter(OZONEPctSt > 200) %>% 
   nrow()
@@ -391,12 +391,11 @@ PM25s <- MassEnviroScreen %>%
   nrow()
 
 # create the table
-data.frame(Indicator = c("MassEnviroScreen Score > 75%tile", "Median Household Income < 65% MA",
-                         "Limited English Households > 25%", "Tribal Territory", 
-                         "Pediatric Asthma > 200% MA", "Low Birthweight > 200% MA", 
-                         "Elevated Blood Lead Levels > 200% MA", "Premature Mortality > 200% MA",                          "Coronary Heart Disease > 200% MA", "Ozone > 200% MA", 
-                         "PM25 > 200% MA"),
-                   `Block Groups` = c(MES75s, MHHIs, LEPs, LARs, Asthmas, LBWs, BLLs, PMRs, CHDs,
+data.frame(Indicator = c("MassEnviroScreen Score >= 75%tile", "Median Household Income <= 65% MA",
+                         "Limited English Households >= 25%", "Tribal Territory", 
+                         "Pediatric Asthma >= 200% MA", "Low Birthweight >= 200% MA", 
+                         "Elevated Blood Lead Levels >= 200% MA", "Premature Mortality >= 200% MA",                          "Ozone >= 200% MA", "PM25 >= 200% MA"),
+                   `Block Groups` = c(MES75s, MHHIs, LEPs, LARs, Asthmas, LBWs, BLLs, PMRs, 
                                       OZONEs, PM25s)) %>% 
   mutate(PctUBAs = paste0(round(Block.Groups/MassEnviroScreen %>% 
                                   filter(UBA=="Yes") %>% nrow()*100, 1),"%"),
@@ -411,7 +410,7 @@ data.frame(Indicator = c("MassEnviroScreen Score > 75%tile", "Median Household I
 
 ### Overlap with EJ criteria
 
-Although MassEnviroScreen identifies a smaller number of census block groups, there is considerable overlap between communities meeting the state's current environmental justice population definition and the criteria for Unfairly Burdened Areas. Although `{r} round(nrow(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",])/nrow(MassEnviroScreen)*100,1)`% of census block groups in the state meet the criteria for Unfairly Burdened Areas, `{r}  round(nrow(MassEnviroScreen[(MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None") & MassEnviroScreen$EJ=="Yes",])/nrow(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",])*100,1)`% of block groups defined as environmental justice populations also meet the Unfairly Burdened Areas criteria. @fig-EJoverlap shows the degree of overlap between the various criteria of environmental justice populations and Unfairly Burdened Areas. There is 100% overlap with all state Environmental Justice Population criteria save for the Minority-only category. Only 39% of census block groups defined as a Environmental Justice Population based solely on the Minority criterion (i.e., 40% or more minority) overlap with Unfairly Burdened Areas as defined here.
+Although MassEnviroScreen identifies a smaller number of census block groups, there is considerable overlap between communities meeting the state's current environmental justice population definition and the criteria for Unfairly Burdened Areas. Although `{r} round(nrow(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",])/nrow(MassEnviroScreen)*100,1)`% of census block groups in the state meet the criteria for Unfairly Burdened Areas, `{r}  round(nrow(MassEnviroScreen[(MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None") & MassEnviroScreen$EJ=="Yes",])/nrow(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",])*100,1)`% of block groups defined as environmental justice populations also meet the Unfairly Burdened Areas criteria. @fig-EJoverlap shows the degree of overlap between the various criteria of environmental justice populations and Unfairly Burdened Areas. There is 100% overlap with all state Environmental Justice Population criteria save for the Minority-only category. Only 38% of census block groups defined as a Environmental Justice Population based solely on the Minority criterion (i.e., 40% or more minority) overlap with Unfairly Burdened Areas as defined here.
 
 ```{r}
 #| echo: false
