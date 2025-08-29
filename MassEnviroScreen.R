@@ -116,7 +116,7 @@ health_tract <- read_csv("data/PLACES/PLACES__Local_Data_for_Better_Health__Cens
 
 
 # read in pediatric asthma from DEP. weighted value by block group. 
-asthma_blkgrp <- read_xlsx("data/DEP/asthma_bg_summary_080125.xlsx", sheet = "Sheet1") %>% 
+asthma_blkgrp <- read_xlsx("data/DEP/asthma_bg_summary_2017_2024.xlsx", sheet = "Sheet1") %>% 
   transmute(GEOID = GEOID,
             pedAsthmaPrevalence = weighted_prevalence,
             n_schools = n_schools,
@@ -132,7 +132,7 @@ DEP_LBW_PMR_tract <- read_xlsx("data/DEP/Indicator data for cumulative impact an
             PMR = `PreMature Mortality Rate (PMR) \r\n(pre 100,000 residents)`,
             SPpctilePMR = percent_rank(`PMR\r\r\n(%tile)`)*100, # Sensitive pop indicator
             LBW = `Low Birth Weight\r\r\n\r\r\n(per 100 live singlton births)`,
-            SPpctileLBW = percent_rank(`Low Birth Weight\r\r\n\r\r\n(%tile)`)*100) 
+            SPpctileLBW = percent_rank(`Low Birth Weight\r\r\n\r\r\n(%tile)`)*100)
 
 
 ## Environmental Exposure Indicators
@@ -151,6 +151,9 @@ ejscreen <- read_csv("data/EJSCREEN24/EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_
 # Use EPA's 2020 AirToxScreen total cancer risk at block level and aggregate to block groups. See https://www.epa.gov/AirToxScreen/2020-airtoxscreen-assessment-results
 airtox2020_blkgrp <- read_xlsx("data/EPA/Region1_CancerRisk_by_block_srcgrp.xlsx") %>% 
   filter(State == "MA") %>% 
+  rowwise() %>% 
+  mutate(`Total Cancer Risk (per million)` = sum(c_across(`PT-StationaryPoint Cancer Risk (per million)`:`BACKGROUND Cancer Risk (per million)`), na.rm = T)) %>% 
+  ungroup() %>% 
   select(Block, Population, `Total Cancer Risk (per million)`) %>% 
   mutate(GEOID = str_sub(Block, 1,12)) %>% 
   group_by(GEOID) %>% 
@@ -163,8 +166,11 @@ ma_tracts2010 <- tracts(state = "MA", year = 2019) %>%
   select(GEOID) %>% 
   st_transform(., crs = st_crs(ma_blkgrp23))
 # join airtox to 2010 tracts and areal weighted interpolation to assign to 2023 block groups
-airtox2019_blkgrp <- read_xlsx("data/EPA/2019_National_allHI_byTract.xlsx") %>% 
+airtox2019_blkgrp <- read_xlsx("data/EPA/2019_National_RespHI_by_tract_srcgrp.xlsx") %>% 
   filter(str_starts(Tract, "25")) %>% 
+  rowwise() %>% 
+  mutate(`Respiratory HI` = sum(c_across(`PT-StationaryPoint Respiratory (hazard quotient)`:`BACKGROUND Respiratory (hazard quotient)`), na.rm = T)) %>% 
+  ungroup() %>% 
   select(Tract, `Respiratory HI`) %>% 
   left_join(ma_tracts2010, ., by = c("GEOID" = "Tract")) %>% 
   st_interpolate_aw(x = .["Respiratory HI"], to = ma_blkgrp23, 
@@ -901,20 +907,20 @@ MassEnviroScreen <- block_groups(state = "MA", year = 2023, cb = TRUE) %>%
   mutate(LBWPctSt = LBW/2.17*100, # state average from DPH
          BLLPctSt = BLL/18.4*100,
          PMRPctSt = PMR/292.5*100,
-         CHDPctSt = `Coronary heart disease among adults`/4.6*100,
+         # CHDPctSt = `Coronary heart disease among adults`/4.6*100,
          PM25PctSt = PM25/6.52*100,
          OZONEPctSt = OZONE/56.7*100,
          UBA = if_else(MassEnviroScore >= 75 | 
                          medHHincMAPCT <= 65 | 
                          limitEngpctE >= 25 | 
                          LARName != "None" |
-                         pedAsthmaPctSt > 200 |
-                         LBWPctSt > 200 |
-                         BLLPctSt > 200 |
-                         PMRPctSt > 200 |
-                         CHDPctSt > 200 |
-                         PM25PctSt > 200 |
-                         OZONEPctSt > 200,
+                         pedAsthmaPctSt >= 200 | # state avg 10.5
+                         LBWPctSt >= 200 |
+                         BLLPctSt >= 200 |
+                         PMRPctSt >= 200 |
+                         # CHDPctSt > 200 |
+                         PM25PctSt >= 200 |
+                         OZONEPctSt >= 200,
                        "Yes", "No")) %>% 
   mutate(popMES = if_else(MassEnviroScore >= 75, 
                           "<b style=\"color:white;background-color:#FF0000;\">MassEnviroScore:</b> ",
@@ -928,25 +934,25 @@ MassEnviroScreen <- block_groups(state = "MA", year = 2023, cb = TRUE) %>%
          popLAR = if_else(LARName != "None",
                           "<b style=\"color:white;background-color:#FF0000;\">Tribal Territory:</b> ",
                           "<b style=\"color:white;background-color:#053061;\">Tribal Territory:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Tribal Territory:</b> "),
-         popASTHMA = if_else(pedAsthmaPctSt > 200,
+         popASTHMA = if_else(pedAsthmaPctSt >= 200,
                           "<b style=\"color:white;background-color:#FF0000;\">Pediatric Asthma:</b> ",
                           "<b style=\"color:white;background-color:#053061;\">Pediatric Asthma:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Pediatric Asthma:</b> "),
-         popLBW = if_else(LBWPctSt > 200,
+         popLBW = if_else(LBWPctSt >= 200,
                              "<b style=\"color:white;background-color:#FF0000;\">Low Birth Weight:</b> ",
                              "<b style=\"color:white;background-color:#053061;\">Low Birth Weight:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Low Birth Weight:</b> "),
-         popBLL = if_else(BLLPctSt > 200,
+         popBLL = if_else(BLLPctSt >= 200,
                           "<b style=\"color:white;background-color:#FF0000;\">Elevated Blood Lead:</b> ",
                           "<b style=\"color:white;background-color:#053061;\">Elevated Blood Lead:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Elevated Blood Lead:</b> "),
-         popPMR = if_else(PMRPctSt > 200,
+         popPMR = if_else(PMRPctSt >= 200,
                           "<b style=\"color:white;background-color:#FF0000;\">Premature Mortality:</b> ",
                           "<b style=\"color:white;background-color:#053061;\">Premature Mortality:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Premature Mortality:</b> "),
-         popCHD = if_else(CHDPctSt > 200,
-                          "<b style=\"color:white;background-color:#FF0000;\">Heart Disease:</b> ",
-                          "<b style=\"color:white;background-color:#053061;\">Heart Disease:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Heart Disease:</b> "),
-         popPM25 = if_else(PM25PctSt > 200,
+         # popCHD = if_else(CHDPctSt > 200,
+         #                  "<b style=\"color:white;background-color:#FF0000;\">Heart Disease:</b> ",
+         #                  "<b style=\"color:white;background-color:#053061;\">Heart Disease:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Heart Disease:</b> "),
+         popPM25 = if_else(PM25PctSt >= 200,
                           "<b style=\"color:white;background-color:#FF0000;\">PM25:</b> ",
                           "<b style=\"color:white;background-color:#053061;\">PM25:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">PM25:</b> "),
-         popOZONE = if_else(OZONEPctSt > 200,
+         popOZONE = if_else(OZONEPctSt >= 200,
                            "<b style=\"color:white;background-color:#FF0000;\">Ozone:</b> ",
                            "<b style=\"color:white;background-color:#053061;\">Ozone:</b> ",
                            missing = "<b style=\"color:white;background-color:#053061;\">Ozone:</b> "))
