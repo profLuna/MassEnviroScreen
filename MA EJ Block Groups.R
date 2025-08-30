@@ -26,10 +26,29 @@ ma_state23medHHincMA <- get_acs(geography = "state", year = 2023, state = "MA",
 
 # get block group median household income
 ma_blkgrp23medHHinc <- get_acs(geography = "block group", year = 2023, state = "MA",
-                               variables = c(medHHinc = "B19013_001"), output = "wide") %>% 
-  mutate(medHHincMA = ma_state23medHHincMA,
+                               variables = c(medHHinc = "B19013_001"), output = "wide")
+
+# get tract MHHI to fill in missing values at BG level
+ma_tract23medHHinc <- get_acs(geography = "tract", year = 2023, state = "MA",
+                               variables = c(medHHincT = "B19013_001"), output = "wide") %>% 
+  select(GEOID, medHHincTE)
+
+# replace missing BG medHHincE values with tract values
+ma_blkgrp23medHHinc <- ma_blkgrp23medHHinc %>% 
+  mutate(GEOID_TRACT = str_trunc(GEOID, 11 ,"right", ellipsis = "")) %>%
+  left_join(., ma_tract23medHHinc, by = c("GEOID_TRACT" = "GEOID")) %>% 
+  mutate(medHHincE = if_else(is.na(medHHincE), medHHincTE, medHHincE),
+         medHHincMA = ma_state23medHHincMA,
          medHHincMAPCT = medHHincE/medHHincMA*100) %>% 
-  select(-NAME)
+  select(-NAME, -GEOID_TRACT, -medHHincTE)
+
+
+# # see if BG with missing values matches tract with available values
+# ma_blkgrpMISSING <- ma_blkgrp23medHHinc %>% 
+#   filter(is.na(medHHincE)) %>% 
+#   inner_join(., ma_tract23medHHinc, by = c("GEOID_TRACT" = "GEOID")) %>% 
+#   mutate(medHHincE = if_else(is.na(medHHincE), medHHincTE, medHHincE))
+
 
 # get municipal median household income and assign to overlapping block groups
 ma_blkgrp23medHHinc <- get_acs(geography = "county subdivision", year = 2023, state = "MA",
