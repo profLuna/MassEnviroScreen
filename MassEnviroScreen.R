@@ -910,17 +910,17 @@ MassEnviroScreen <- block_groups(state = "MA", year = 2023, cb = TRUE) %>%
          # CHDPctSt = `Coronary heart disease among adults`/4.6*100,
          PM25PctSt = PM25/6.52*100,
          OZONEPctSt = OZONE/56.7*100,
-         UBA = if_else(MassEnviroScore >= 75 | 
-                         medHHincMAPCT <= 65 | 
-                         limitEngpctE >= 25 | 
+         UBA = if_else(round(MassEnviroScore,0) >= 75 | 
+                         round(medHHincMAPCT,0) <= 65 | 
+                         round(limitEngpctE,0) >= 25 | 
                          LARName != "None" |
-                         pedAsthmaPctSt >= 200 | # state avg 10.5
-                         LBWPctSt >= 200 |
-                         BLLPctSt >= 200 |
-                         PMRPctSt >= 200 |
+                         round(pedAsthmaPctSt,0) >= 200 | # state avg 10.5
+                         round(LBWPctSt,0) >= 200 |
+                         round(BLLPctSt,0) >= 200 |
+                         round(PMRPctSt,0) >= 200 |
                          # CHDPctSt > 200 |
-                         PM25PctSt >= 200 |
-                         OZONEPctSt >= 200,
+                         round(PM25PctSt,0) >= 200 |
+                         round(OZONEPctSt,0) >= 200,
                        "Yes", "No")) %>% 
   mutate(popMES = if_else(MassEnviroScore >= 75, 
                           "<b style=\"color:white;background-color:#FF0000;\">MassEnviroScore:</b> ",
