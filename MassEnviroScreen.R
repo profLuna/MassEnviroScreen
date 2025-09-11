@@ -125,14 +125,20 @@ asthma_blkgrp <- read_xlsx("data/DEP/asthma_bg_summary_2017_2024.xlsx", sheet = 
 
 
 # load MADPH premature mortality rate, low birth weight, and confirmed elevated blood levels by census tract. MDPH provided an age-adjusted premature mortality rate (PMR per 100,000) by tract. Average Annual Prevalence of Males and Females with estimated confirmed blood lead levels >= 5 micrograms/decilieter in 2017 - 2021 that were between 9 and less than 48 months of age. Acquired from MassDEP Cumulative Impact Analysis in Air Quality Permitting at https://www.mass.gov/info-details/cumulative-impact-analysis-in-air-quality-permitting#cia-guidance-and-tools-
-DEP_LBW_PMR_tract <- read_xlsx("data/DEP/Indicator data for cumulative impact analysis UPDATED Jan 2025.xlsx", skip = 1, sheet = "Indicators by Tract") %>% 
+DEP_LBW_BLL_tract <- read_xlsx("data/DEP/Indicator data for cumulative impact analysis UPDATED Jan 2025.xlsx", skip = 1, sheet = "Indicators by Tract") %>% 
   transmute(GEOID_TRACT = as.character(Tract), 
             BLL = `Elevated  Blood Lead\r\r\n\r\r\n(per 1000 screened)`,
             SPpctileBLL = percent_rank(`Elevated  Blood Lead\r\r\n\r\r\n(%tile)`)*100,
-            PMR = `PreMature Mortality Rate (PMR) \r\n(pre 100,000 residents)`,
-            SPpctilePMR = percent_rank(`PMR\r\r\n(%tile)`)*100, # Sensitive pop indicator
+            # PMR = `PreMature Mortality Rate (PMR) \r\n(pre 100,000 residents)`,
+            # SPpctilePMR = percent_rank(`PMR\r\r\n(%tile)`)*100, # Sensitive pop indicator
             LBW = `Low Birth Weight\r\r\n\r\r\n(per 100 live singlton births)`,
             SPpctileLBW = percent_rank(`Low Birth Weight\r\r\n\r\r\n(%tile)`)*100)
+# read in updated PMR data for 2019-2023
+DEP_PMR_tract <- read_xlsx("data/DEP/PMR_Tracts_PMR_PctSt_Percentile_2019_2023_ready.xlsx", sheet = "Tract_PMR") %>% 
+  transmute(GEOID_TRACT = as.character(geoid_tract),
+            PMR = pmr_new,
+            SPpctilePMR = pmr_percentile,
+            PMRPctSt = pmr_pctst_new)
 
 
 ## Environmental Exposure Indicators
@@ -848,8 +854,9 @@ MassEnviroScreen <- ma_blkgrp23 %>%
   left_join(., select(asthma_blkgrp, GEOID, pedAsthmaPrevalence, pedAsthmaPctSt, 
                       SPpctileAsthmaPed), 
             by = "GEOID") %>% 
-  left_join(., select(DEP_LBW_PMR_tract, GEOID_TRACT, BLL, SPpctileBLL, LBW, SPpctileLBW, PMR, 
-                      SPpctilePMR),
+  left_join(., select(DEP_LBW_BLL_tract, GEOID_TRACT, BLL, SPpctileBLL, LBW, SPpctileLBW),
+            by = "GEOID_TRACT") %>% 
+  left_join(., select(DEP_PMR_tract, GEOID_TRACT, PMR, SPpctilePMR, PMRPctSt),
             by = "GEOID_TRACT") %>% 
   left_join(., select(ma_blkgrp23HS, GEOID, HSlesspctE, SEpctileHS), by = "GEOID") %>% 
   left_join(., select(hhburden, geoid2, hhburden, SEpctileHHB), by = c("GEOID_TRACT" = "geoid2")) %>% 
@@ -905,57 +912,65 @@ MassEnviroScreen <- block_groups(state = "MA", year = 2023, cb = TRUE) %>%
   st_join(., st_transform(BIA, crs = st_crs(.))) %>% 
   replace_na(list(LARName = "None")) %>% 
   mutate(LBWPctSt = LBW/2.17*100, # state average from DPH
-         BLLPctSt = BLL/18.4*100,
-         PMRPctSt = PMR/292.5*100,
+         BLLPctSt = BLL/18.4*100) %>% 
+  rowwise() %>% 
+         # PMRPctSt = PMR/292.5*100,
          # CHDPctSt = `Coronary heart disease among adults`/4.6*100,
-         PM25PctSt = PM25/6.52*100,
-         OZONEPctSt = OZONE/56.7*100,
-         UBA = if_else(round(MassEnviroScore,0) >= 75 | 
+         # PM25PctSt = PM25/6.52*100,
+         # OZONEPctSt = OZONE/56.7*100,
+mutate(HealthPctStAvg = mean(c_across(c(LBWPctSt, BLLPctSt, pedAsthmaPctSt, PMRPctSt)), na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  mutate(UBA = if_else(round(MassEnviroScore,0) >= 75 | 
                          round(medHHincMAPCT,0) <= 65 | 
-                         round(limitEngpctE,0) >= 25 | 
-                         LARName != "None" |
-                         round(pedAsthmaPctSt,0) >= 200 | # state avg 10.5
-                         round(LBWPctSt,0) >= 200 |
-                         round(BLLPctSt,0) >= 200 |
-                         round(PMRPctSt,0) >= 200 |
+                         round(HealthPctStAvg,0) >= 150,
+                         # round(limitEngpctE,0) >= 25 | 
+                         # LARName != "None" |
+                         # round(pedAsthmaPctSt,0) >= 200 | # state avg 10.5
+                         # round(LBWPctSt,0) >= 200 |
+                         # round(BLLPctSt,0) >= 200 |
+                         # round(PMRPctSt,0) >= 200 | # state avg 292.75758492
                          # CHDPctSt > 200 |
-                         round(PM25PctSt,0) >= 200 |
-                         round(OZONEPctSt,0) >= 200,
+                         # round(PM25PctSt,0) >= 200 |
+                         # round(OZONEPctSt,0) >= 200,
                        "Yes", "No")) %>% 
   mutate(popMES = if_else(MassEnviroScore >= 75, 
-                          "<b style=\"color:white;background-color:#FF0000;\">MassEnviroScore:</b> ",
-                          "<b style=\"color:white;background-color:#053061;\">MassEnviroScore:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">MassEnviroScore:</b> "),
+                          "<b style=\"color:white;background-color:#FF0000;\">MassEnviroScore Percentile:</b> ",
+                          "<b style=\"color:white;background-color:#053061;\">MassEnviroScore Percentile:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">MassEnviroScore Percentile:</b> "),
          popMHI = if_else(medHHincMAPCT <= 65,
                           "<b style=\"color:white;background-color:#FF0000;\">Median Household Income:</b> ",
                           "<b style=\"color:white;background-color:#053061;\">Median Household Income:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Median Household Income:</b> "),
-         popLEP = if_else(limitEngpctE >= 25,
-                          "<b style=\"color:white;background-color:#FF0000;\">Limited English Households:</b> ",
-                          "<b style=\"color:white;background-color:#053061;\">Limited English Households:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Limited English Households:</b> "),
-         popLAR = if_else(LARName != "None",
-                          "<b style=\"color:white;background-color:#FF0000;\">Tribal Territory:</b> ",
-                          "<b style=\"color:white;background-color:#053061;\">Tribal Territory:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Tribal Territory:</b> "),
-         popASTHMA = if_else(pedAsthmaPctSt >= 200,
-                          "<b style=\"color:white;background-color:#FF0000;\">Pediatric Asthma:</b> ",
-                          "<b style=\"color:white;background-color:#053061;\">Pediatric Asthma:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Pediatric Asthma:</b> "),
-         popLBW = if_else(LBWPctSt >= 200,
-                             "<b style=\"color:white;background-color:#FF0000;\">Low Birth Weight:</b> ",
-                             "<b style=\"color:white;background-color:#053061;\">Low Birth Weight:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Low Birth Weight:</b> "),
-         popBLL = if_else(BLLPctSt >= 200,
-                          "<b style=\"color:white;background-color:#FF0000;\">Elevated Blood Lead:</b> ",
-                          "<b style=\"color:white;background-color:#053061;\">Elevated Blood Lead:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Elevated Blood Lead:</b> "),
-         popPMR = if_else(PMRPctSt >= 200,
-                          "<b style=\"color:white;background-color:#FF0000;\">Premature Mortality:</b> ",
-                          "<b style=\"color:white;background-color:#053061;\">Premature Mortality:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Premature Mortality:</b> "),
+         popHLTH = if_else(HealthPctStAvg >= 150,
+                          "<b style=\"color:white;background-color:#FF0000;\">Avg of Health Indicators (% of State Avg):</b> ",
+                          "<b style=\"color:white;background-color:#053061;\">Avg of Health Indicators (% of State Avg):</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Avg of Health Indicators (% of State Avg):</b> ")
+         # popLEP = if_else(limitEngpctE >= 25,
+         #                  "<b style=\"color:white;background-color:#FF0000;\">Limited English Households:</b> ",
+         #                  "<b style=\"color:white;background-color:#053061;\">Limited English Households:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Limited English Households:</b> "),
+         # popLAR = if_else(LARName != "None",
+         #                  "<b style=\"color:white;background-color:#FF0000;\">Tribal Territory:</b> ",
+         #                  "<b style=\"color:white;background-color:#053061;\">Tribal Territory:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Tribal Territory:</b> "),
+         # popASTHMA = if_else(pedAsthmaPctSt >= 200,
+         #                  "<b style=\"color:white;background-color:#FF0000;\">Pediatric Asthma:</b> ",
+         #                  "<b style=\"color:white;background-color:#053061;\">Pediatric Asthma:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Pediatric Asthma:</b> "),
+         # popLBW = if_else(LBWPctSt >= 200,
+         #                     "<b style=\"color:white;background-color:#FF0000;\">Low Birth Weight:</b> ",
+         #                     "<b style=\"color:white;background-color:#053061;\">Low Birth Weight:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Low Birth Weight:</b> "),
+         # popBLL = if_else(BLLPctSt >= 200,
+         #                  "<b style=\"color:white;background-color:#FF0000;\">Elevated Blood Lead:</b> ",
+         #                  "<b style=\"color:white;background-color:#053061;\">Elevated Blood Lead:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Elevated Blood Lead:</b> "),
+         # popPMR = if_else(PMRPctSt >= 200,
+         #                  "<b style=\"color:white;background-color:#FF0000;\">Premature Mortality:</b> ",
+         #                  "<b style=\"color:white;background-color:#053061;\">Premature Mortality:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Premature Mortality:</b> ")
          # popCHD = if_else(CHDPctSt > 200,
          #                  "<b style=\"color:white;background-color:#FF0000;\">Heart Disease:</b> ",
          #                  "<b style=\"color:white;background-color:#053061;\">Heart Disease:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Heart Disease:</b> "),
-         popPM25 = if_else(PM25PctSt >= 200,
-                          "<b style=\"color:white;background-color:#FF0000;\">PM25:</b> ",
-                          "<b style=\"color:white;background-color:#053061;\">PM25:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">PM25:</b> "),
-         popOZONE = if_else(OZONEPctSt >= 200,
-                           "<b style=\"color:white;background-color:#FF0000;\">Ozone:</b> ",
-                           "<b style=\"color:white;background-color:#053061;\">Ozone:</b> ",
-                           missing = "<b style=\"color:white;background-color:#053061;\">Ozone:</b> "))
+         # popPM25 = if_else(PM25PctSt >= 200,
+         #                  "<b style=\"color:white;background-color:#FF0000;\">PM25:</b> ",
+         #                  "<b style=\"color:white;background-color:#053061;\">PM25:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">PM25:</b> "),
+         # popOZONE = if_else(OZONEPctSt >= 200,
+         #                   "<b style=\"color:white;background-color:#FF0000;\">Ozone:</b> ",
+         #                   "<b style=\"color:white;background-color:#053061;\">Ozone:</b> ",
+         #                   missing = "<b style=\"color:white;background-color:#053061;\">Ozone:</b> ")
+         )
 
 
 # save for later analysis and mapping
