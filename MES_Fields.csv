@@ -17,8 +17,8 @@ DWATER,Safe Drinking Water Act (SDWA) compliance performance score of a communit
 EXPpctileDWATER,Safe Drinking Water Act (SDWA) compliance performance score statewide percentile ,US EPA EJScreen 2024,,,,,2019 - 2023
 CancerRisk,Cumulative Lifetime Cancer Risk from Exposure to Air Toxics per million people,US EPA AirToxScreen,https://www.epa.gov/AirToxScreen/2020-airtoxscreen-assessment-results,,,,2020
 EXPpctileCancerRisk,Cumulative Lifetime Cancer Risk from Exposure to Air Toxics statewide percentile,US EPA AirToxScreen,,,,,2020
-Respiratory HI,"Non-Cancer Respiratory Hazard Index, ratio of exposure concentration to a reference concentration",US EPA AirToxScreen,https://www.epa.gov/AirToxScreen/2019-airtoxscreen-assessment-results,,,,2019
-EXPpctileRespHI,Non-Cancer Respiratory Hazard Index statewide percentile,US EPA AirToxScreen,,,,,2019
+Respiratory HI,"Non-Cancer Respiratory Hazard Index, ratio of exposure concentration to a reference concentration",US EPA AirToxScreen,https://www.epa.gov/AirToxScreen/2019-airtoxscreen-assessment-results,,,,2020
+EXPpctileRespHI,Non-Cancer Respiratory Hazard Index statewide percentile,US EPA AirToxScreen,,,,,2020
 cleanup_score,Weighted sum of cleanup sites requiring federal or state oversight for cleanup due to contamination,US EPA OLEM; US EPA ACRES; MassDEP C21E; MassDEP AUL,https://edg.epa.gov/data/PUBLIC/OLEM/OLEM-OSRTI/NPL_Boundaries.zip,https://catalog.data.gov/dataset/acres-brownfields-properties,https://www.mass.gov/info-details/massgis-data-massdep-tier-classified-oil-andor-hazardous-material-sites-mgl-c-21e,https://www.mass.gov/info-details/massgis-data-massdep-oil-andor-hazardous-material-sites-with-activity-and-use-limitations-aul,2024 - 2025
 EFFCTpctileCleanup,Weighted sum of cleanup sites statewide percentile,US EPA OLEM; US EPA ACRES; MassDEP C21E; MassDEP AUL,,,,,2024 - 2025
 gwater_score,Weighted sum of groundwater threats,US EPA UST Finder; MassDEP Groundwater Discharge Permits,https://epa.maps.arcgis.com/home/item.html?id=5a3ae0ed53564b6fa519f08e30e79e93,https://www.mass.gov/info-details/massgis-data-massdep-groundwater-discharge-permits,,,2024 - 2025
@@ -37,14 +37,14 @@ Chronic obstructive pulmonary disease among adults,Chronic Obstructive Pulmonary
 SPpctileCOPD,Chronic Obstructive Pulmonary Disease  crude prevalence statewide percentile,CDC PLACES,,,,,2024
 Cancer (non-skin) or melanoma among adults,Cancer crude prevalence among adults,CDC PLACES,https://data.cdc.gov/500-Cities-Places/PLACES-Local-Data-for-Better-Health-Census-Tract-D/cwsq-ngmh/about_data,,,,2024
 SPpctileCANCER,Cancer crude prevalence statewide percentile,CDC PLACES,,,,,2024
-pedAsthmaPrevalence,Pediatric Asthma Average prevalence (% of school enrollment),MDPH/BEH via DEP,https://www.mass.gov/info-details/cumulative-impact-analysis-in-air-quality-permitting#cia-guidance-and-tools-,,,,2017-2024
-SPpctileAsthmaPed,Pediatric Asthma Average prevalence statewide percentile,MDPH/BEH via DEP,,,,,2017-2024
+pedAsthmaPrevalence,Pediatric Asthma Average prevalence (% of school enrollment),MDPH/BEH via DEP,https://www.mass.gov/info-details/cumulative-impact-analysis-in-air-quality-permitting#cia-guidance-and-tools-,,,,2014 - 2017
+SPpctileAsthmaPed,Pediatric Asthma Average prevalence statewide percentile,MDPH/BEH via DEP,,,,,2014 - 2017
 BLL,Elevated Blood Level prevalence in children (5-year),MDPH via DEP,https://www.mass.gov/info-details/cumulative-impact-analysis-in-air-quality-permitting#cia-guidance-and-tools-,,,,2017-2021
 SPpctileBLL,Elevated Blood Level prevalence in children statewide percentile,MDPH via DEP,,,,,2017-2021
 LBW,Low Birth Weight 5-year Annual Average per 100 full-term births,MDPH via DEP,https://www.mass.gov/info-details/cumulative-impact-analysis-in-air-quality-permitting#cia-guidance-and-tools-,,,,2011-2015
 SPpctileLBW,Low Birth Weight 5-year Annual Average statewide percentile,MDPH via DEP,,,,,2011-2015
-PMR,"Age-adjusted Premature Mortality Rate per 100,000",MDPH via DEP,https://www.mass.gov/info-details/cumulative-impact-analysis-in-air-quality-permitting#cia-guidance-and-tools-,,,,2018-2022
-SPpctilePMR,Age-adjusted Premature Mortality Rate statewide percentile,MDPH via DEP,,,,,2018-2022
+PMR,"Age-adjusted Premature Mortality Rate per 100,000",MDPH via DEP,https://www.mass.gov/info-details/cumulative-impact-analysis-in-air-quality-permitting#cia-guidance-and-tools-,,,,2019-2023
+SPpctilePMR,Age-adjusted Premature Mortality Rate statewide percentile,MDPH via DEP,,,,,2019-2023
 HSlesspctE,Percentage of adults without a highschool diploma,US American Community Survey via tidycensus API,,,,,2019-2023
 SEpctileHS,Percentage of adults without a highschool diploma statewide percentile,US American Community Survey via tidycensus API,,,,,2019-2023
 hhburden,Percentage of low income households that are housing burdened,US HUD CHAS,https://www.huduser.gov/portal/datasets/cp.html,,,,2017-2021
