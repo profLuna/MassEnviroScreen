@@ -1,5 +1,5 @@
 ---
-title: "MassEnviroScreen Cumulative Impact Score - A Supplement for Environmental Justice Prioritization"
+title: "MassEnviroScreen Cumulative Burden Score - A Supplement for Environmental Justice Prioritization"
 format: 
   html:
     toc: true
@@ -11,25 +11,23 @@ editor: visual
 
 ## Introduction and purpose
 
-This document presents a tool for identifying or prioritizing the most environmentally vulnerable or burdened communities in Massachusetts based on a cumulative impact score that incorporates exposure to pollution and climate risks and the presence of sensitive or vulnerable populations, as well as whether the community meets criteria related to limited English proficiency, household income, or presence of tribal land. It is intended to act as a supplement to the Massachusetts Environmental Justice Population definition.
+This document presents a tool for identifying or prioritizing the most environmentally vulnerable or burdened communities in Massachusetts based on a cumulative burden score that incorporates exposure to pollution and climate risks and the presence of sensitive or vulnerable populations, as well as whether the community meets criteria related to household income and select health criteria. It is intended to act as a supplement to the Massachusetts Environmental Justice Population definition.
 
-This tool - MassEnviroScreen - is a hybrid approach that utilizes elements of the current [Massachusetts Environmental Justice Population definition](https://www.mass.gov/info-details/environmental-justice-populations-in-massachusetts), the presence of [federally recognized tribal lands](https://biamaps.geoplatform.gov/biatracts/), and a cumulative impact mapping approach. The cumulative impacts mapping approach is modeled on those used by [California EPA's CalEnviroScreen tool](https://oehha.ca.gov/calenviroscreen) and the [Colorado EnviroScreen tool](https://www.cohealthmaps.dphe.state.co.us/COEnviroscreen_2/). The California and Colorado tools utilize a 'cumulative impact score' to describe the relative environmental burden of communities across the state and to prioritize those that are most burdened. California defines cumulative impacts as "the exposures, public health or environmental effects from the combined emissions and discharges, in a geographic area, including environmental pollution from all sources, whether single or multi-media, routinely, accidentally, or otherwise released." Impacts consider “sensitive populations and socio-economic factors, where applicable and to the extent data are available.” The Colorado tool augments the CalEnviroScreen approach by adding climate risks, which is the approach followed here.
+This tool - MassEnviroScreen - is a hybrid approach that utilizes elements of the current [Massachusetts Environmental Justice Population definition](https://www.mass.gov/info-details/environmental-justice-populations-in-massachusetts), the presence of [federally recognized tribal lands](https://biamaps.geoplatform.gov/biatracts/), and a cumulative burden mapping approach. The cumulative burdens mapping approach is modeled on those used by [California EPA's CalEnviroScreen tool](https://oehha.ca.gov/calenviroscreen) and the [Colorado EnviroScreen tool](https://www.cohealthmaps.dphe.state.co.us/COEnviroscreen_2/). The California and Colorado tools utilize a 'cumulative impact score' to describe the relative environmental burden of communities across the state and to prioritize those that are most burdened. California defines cumulative impacts as "the exposures, public health or environmental effects from the combined emissions and discharges, in a geographic area, including environmental pollution from all sources, whether single or multi-media, routinely, accidentally, or otherwise released." Impacts consider “sensitive populations and socio-economic factors, where applicable and to the extent data are available.” The Colorado tool augments the CalEnviroScreen approach by adding climate risks, which is the approach followed here.
 
-A 'cumulative impact score' is a numerical value that ranks every community (i.e., census block group) on a scale from 0 to 100. Higher values indicate greater cumulative burden. These values also represent percentile ranks, which means that a community's score also indicates the percentage of scores in a group that are equal to or lower than a given score. For example, a census block group with a score of 50 (50th percentile) means that its cumulative impact score is equal to or higher than 50% of census block groups in the state. In this model, we follow California's example of using a score of 75 (the 75th percentile) as one of the thresholds for identifying the most impacted or 'Unfairly Burdened Areas.' Census block groups with a minimum score of 75 experience cumulative impacts that are equal to or higher than 75% of block groups in the state. In other words, these block group represent the top 25% of cumulative impact scores in Massachusetts.
+A 'cumulative burden score' is a numerical value that ranks every community (i.e., census block group) on a scale from 0 to 100. Higher values indicate greater cumulative burden. These values also represent percentile ranks, which means that a community's score also indicates the percentage of scores in a group that are equal to or lower than a given score. For example, a census block group with a score of 50 (50th percentile) means that its cumulative burden score is equal to or higher than 50% of census block groups in the state. In this model, we follow California's example of using a score of 75 (the 75th percentile) as one of the thresholds for identifying the most impacted or 'Burdened Areas.' Census block groups with a minimum score of 75 experience cumulative burdens that are equal to or higher than 75% of block groups in the state. In other words, these block group represent the top 25% of cumulative burden scores in Massachusetts.
 
-To define "Unfairly Burdened Areas" in this tool, cumulative impact scores of 75 or higher are combined with two of the [existing Massachusetts EJ criteria](https://www.mass.gov/info-details/environmental-justice-populations-in-massachusetts) - limited English speaking households and low income - as well as the presence of federally-recognized tribal territory.
+To define "Burdened Areas" in this tool, cumulative burden percentile scores of 75 or higher are combined with one of the [existing Massachusetts EJ criteria](https://www.mass.gov/info-details/environmental-justice-populations-in-massachusetts) -  low income - as well as an average of four sentinel health indicators that equal or exceed 150% of the statewide average.
 
 ::: {.callout-note appearance="simple"}
-## Unfairly Burdened Areas are communities (i.e., census block groups) that meet one or more of the following criteria:
+## Burdened Areas are communities (i.e., census block groups) that meet one or more of the following criteria:
 
--   cumulative impact score (i.e, MassEnviroScore) of 75 or greater, OR
+-   cumulative burden percentile score (i.e, MassEnviroScore) of 75 or greater, OR
 -   annual median household income is 65 percent or less of the statewide annual median household income, OR
--   25 percent or more of households identify as speaking English less than "very well," OR
--   occupy or intersect land within the boundaries of Federally Recognized Tribes, OR
--   health indicators equal or exceed 200% of the statewide average
+-   average of four health indicators (pediatric asthma, low birth weight, elevated blood lead levels, and premature mortality) equal or exceed 150% of the statewide average
 :::
 
-@fig-map is an interactive map that displays 'Unfairly Burdened Areas' (census block groups in red), as defined above. Click on a block group to see its MassEnviroScreen score and the subscores (described in more detail later in the document) that comprise that cumulative burden, as well as other details. [Text in red]{style="color:white;background-color:#FF0000"} indicates a criterion's threshold is exceeded or met. [Text in blue]{style="color:white;background-color:#053061"} indicates a criterion's threshold is not exceeded or met. Select the checkbox next to 'MA EJ Populations' (upper right corner) to compare these Unfairly Burdened Areas with block groups identified as Environmental Justice Populations under Massachusetts law. Finally, activate the 'MassEnviroScore' radio button to see cumulative impact scores for every census block group across the state.
+@fig-map is an interactive map that displays 'Burdened Areas' (census block groups in red), as defined above. Click on a block group to see its MassEnviroScreen percentile score and the subscores (described in more detail later in the technical documentation) that comprise that cumulative burden, as well as other details. [Text in red]{style="color:white;background-color:#FF0000"} indicates a criterion's threshold is exceeded or met. [Text in blue]{style="color:white;background-color:#053061"} indicates a criterion's threshold is not exceeded or met. Select the checkbox next to 'MA EJ Populations' (upper right corner) to compare these Burdened Areas with block groups identified as Environmental Justice Populations under Massachusetts law. Finally, activate the 'MassEnviroScore' radio button to see cumulative burden scores for every census block group across the state.
 
 ```{r}
 #| echo: false
@@ -45,7 +43,7 @@ options(tigris_use_cache = TRUE)
 MassEnviroScreen <- readRDS("MassEnviroScreen.rds") %>% 
   select(UBA, EJ, EJ_CRIT_DESC, MassEnviroScore, NAME, COSUB, 
          PollutionBurden100, PopCharacteristics100, 
-         minorityPctE, medHHincE, medHHincMAPCT, limitEngpctE, LARName, 
+         minorityPctE, medHHincE, medHHincMAPCT, HealthPctStAvg, limitEngpctE, LARName, 
          starts_with("pop"), ends_with("PctSt"))
 
 # read in county subdivisions
@@ -85,14 +83,17 @@ MES75PopUp <- paste0(MassEnviroScreen75$NAME, "<br/>",
                      "<b>Sensitive Pop SubScore:</b> ", round(MassEnviroScreen75$PopCharacteristics100,1), "<br/>",
                      "<b>MA EJ Pop? </b>", MassEnviroScreen75$EJ,"<br/>",
                       "<b>Minority: </b>", paste0(round(MassEnviroScreen75$minorityPctE,1),"%"),"<br/>",
-                      MassEnviroScreen75$popMHI, if_else(!is.na(MassEnviroScreen75$medHHincE), paste0("$",formatC(MassEnviroScreen75$medHHincE, format = "d", big.mark=",")), "NA"),"<br/>",
-                      MassEnviroScreen75$popLEP, paste0(round(MassEnviroScreen75$limitEngpctE,1)),"%", "<br/>",
+                      MassEnviroScreen75$popMHI, 
+                     if_else(!is.na(MassEnviroScreen75$medHHincE), paste0("$",formatC(MassEnviroScreen75$medHHincE, format = "d", big.mark=",")), "NA"),"<br/>",
+                      "<b>Limited English Households: </b>", paste0(round(MassEnviroScreen75$limitEngpctE,1)),"%", "<br/>",
+                     "<b>Tribal Territory: </b>",
                      MassEnviroScreen75$popLAR, MassEnviroScreen75$LARName, "<br/>",
-                     "<b>Health Indicators (% of State Avg):</b>", "<br/>",
-                     MassEnviroScreen75$popASTHMA, paste0(round(MassEnviroScreen75$pedAsthmaPctSt,1),"%"), "<br/>",
-                     MassEnviroScreen75$popBLL, if_else(!is.na(MassEnviroScreen75$BLLPctSt), paste0(round(MassEnviroScreen75$BLLPctSt,1),"%"), "NA"), "<br/>",
-                     MassEnviroScreen75$popLBW, if_else(!is.na(MassEnviroScreen75$LBWPctSt), paste0(round(MassEnviroScreen75$LBWPctSt,1),"%"), "NA"), "<br/>",
-                     MassEnviroScreen75$popPMR, if_else(!is.na(MassEnviroScreen75$PMRPctSt), paste0(round(MassEnviroScreen75$PMRPctSt,1),"%"), "NA"), "<br/>"
+                     MassEnviroScreen75$popHLTH,
+                     if_else(!is.na(MassEnviroScreen75$HealthPctStAvg), paste0(round(MassEnviroScreen75$HealthPctStAvg,1),"%"),"NA")
+                     # MassEnviroScreen75$popASTHMA, paste0(round(MassEnviroScreen75$pedAsthmaPctSt,1),"%"), "<br/>",
+                     # MassEnviroScreen75$popBLL, if_else(!is.na(MassEnviroScreen75$BLLPctSt), paste0(round(MassEnviroScreen75$BLLPctSt,1),"%"), "NA"), "<br/>",
+                     # MassEnviroScreen75$popLBW, if_else(!is.na(MassEnviroScreen75$LBWPctSt), paste0(round(MassEnviroScreen75$LBWPctSt,1),"%"), "NA"), "<br/>",
+                     # MassEnviroScreen75$popPMR, if_else(!is.na(MassEnviroScreen75$PMRPctSt), paste0(round(MassEnviroScreen75$PMRPctSt,1),"%"), "NA"), "<br/>"
                      # MassEnviroScreen75$popCHD, if_else(!is.na(MassEnviroScreen75$CHDPctSt), paste0(round(MassEnviroScreen75$CHDPctSt,1),"%"), "NA"), "<br/>",
                      # MassEnviroScreen75$popPM25, if_else(!is.na(MassEnviroScreen75$PM25PctSt), paste0(round(MassEnviroScreen75$PM25PctSt,1),"%"), "NA"), "<br/>",
                      # MassEnviroScreen75$popOZONE, if_else(!is.na(MassEnviroScreen75$OZONEPctSt), paste0(round(MassEnviroScreen75$OZONEPctSt,1),"%"), "NA")
@@ -106,18 +107,21 @@ MAEJpopup <- paste0(MA_EJ23$NAME, "<br/>",
                      "<b>Sensitive Pop SubScore:</b> ", round(MA_EJ23$PopCharacteristics100,1), "<br/>",
                      "<b>MA EJ Pop? </b>", MA_EJ23$EJ,"<br/>",
                       "<b>Minority: </b>", paste0(round(MA_EJ23$minorityPctE,1),"%"),"<br/>",
-                      MA_EJ23$popMHI, if_else(!is.na(MA_EJ23$medHHincE), paste0("$",formatC(MA_EJ23$medHHincE, format = "d", big.mark=",")), "NA"),"<br/>",
-                      MA_EJ23$popLEP, paste0(round(MA_EJ23$limitEngpctE,1)),"%", "<br/>",
+                      MA_EJ23$popMHI, 
+                     if_else(!is.na(MA_EJ23$medHHincE), paste0("$",formatC(MA_EJ23$medHHincE, format = "d", big.mark=",")), "NA"),"<br/>",
+                      "<b>Limited English Households: </b>", paste0(round(MA_EJ23$limitEngpctE,1)),"%", "<br/>",
+                     "<b>Tribal Territory: </b>",
                      MA_EJ23$popLAR, MA_EJ23$LARName, "<br/>",
-                     "<b>Health Indicators (% of State Avg):</b>", "<br/>",
-                     MA_EJ23$popASTHMA, paste0(round(MA_EJ23$pedAsthmaPctSt,1),"%"), "<br/>",
-                     MA_EJ23$popBLL, if_else(!is.na(MA_EJ23$BLLPctSt), paste0(round(MA_EJ23$BLLPctSt,1),"%"), "NA"), "<br/>",
-                     MA_EJ23$popLBW, if_else(!is.na(MA_EJ23$LBWPctSt), paste0(round(MA_EJ23$LBWPctSt,1),"%"), "NA"), "<br/>",
-                     MA_EJ23$popPMR, if_else(!is.na(MA_EJ23$PMRPctSt), paste0(round(MA_EJ23$PMRPctSt,1),"%"), "NA"), "<br/>"
+                     MA_EJ23$popHLTH,
+                     if_else(!is.na(MA_EJ23$HealthPctStAvg), paste0(round(MA_EJ23$HealthPctStAvg,1),"%"),"NA")
+                     # MA_EJ23$popASTHMA, paste0(round(MA_EJ23$pedAsthmaPctSt,1),"%"), "<br/>",
+                     # MA_EJ23$popBLL, if_else(!is.na(MA_EJ23$BLLPctSt), paste0(round(MA_EJ23$BLLPctSt,1),"%"), "NA"), "<br/>",
+                     # MA_EJ23$popLBW, if_else(!is.na(MA_EJ23$LBWPctSt), paste0(round(MA_EJ23$LBWPctSt,1),"%"), "NA"), "<br/>",
+                     # MA_EJ23$popPMR, if_else(!is.na(MA_EJ23$PMRPctSt), paste0(round(MA_EJ23$PMRPctSt,1),"%"), "NA"), "<br/>"
                      # MA_EJ23$popCHD, if_else(!is.na(MA_EJ23$CHDPctSt), paste0(round(MA_EJ23$CHDPctSt,1),"%"), "NA"), "<br/>",
                      # MA_EJ23$popPM25, if_else(!is.na(MA_EJ23$PM25PctSt), paste0(round(MA_EJ23$PM25PctSt,1),"%"), "NA"), "<br/>",
                      # MA_EJ23$popOZONE, if_else(!is.na(MA_EJ23$OZONEPctSt), paste0(round(MA_EJ23$OZONEPctSt,1),"%"), "NA")
-                    )
+                     )
 
 # repeat for MassEnviroScore layer. if block group is below 75th percentile, make label text color for MassEnviroScore green. 
 MESscorePopup <- paste0(MassEnviroScreen$NAME, "<br/>",
@@ -127,14 +131,17 @@ MESscorePopup <- paste0(MassEnviroScreen$NAME, "<br/>",
                      "<b>Sensitive Pop SubScore:</b> ", round(MassEnviroScreen$PopCharacteristics100,1), "<br/>",
                      "<b>MA EJ Pop? </b>", MassEnviroScreen$EJ,"<br/>",
                       "<b>Minority: </b>", paste0(round(MassEnviroScreen$minorityPctE,1),"%"),"<br/>",
-                      MassEnviroScreen$popMHI, if_else(!is.na(MassEnviroScreen$medHHincE), paste0("$",formatC(MassEnviroScreen$medHHincE, format = "d", big.mark=",")), "NA"),"<br/>",
-                      MassEnviroScreen$popLEP, paste0(round(MassEnviroScreen$limitEngpctE,1)),"%", "<br/>",
+                      MassEnviroScreen$popMHI, 
+                     if_else(!is.na(MassEnviroScreen$medHHincE), paste0("$",formatC(MassEnviroScreen$medHHincE, format = "d", big.mark=",")), "NA"),"<br/>",
+                      "<b>Limited English Households: </b>", paste0(round(MassEnviroScreen$limitEngpctE,1)),"%", "<br/>",
+                     "<b>Tribal Territory: </b>",
                      MassEnviroScreen$popLAR, MassEnviroScreen$LARName, "<br/>",
-                     "<b>Health Indicators (% of State Avg):</b>", "<br/>",
-                     MassEnviroScreen$popASTHMA, paste0(round(MassEnviroScreen$pedAsthmaPctSt,1),"%"), "<br/>",
-                     MassEnviroScreen$popBLL, if_else(!is.na(MassEnviroScreen$BLLPctSt), paste0(round(MassEnviroScreen$BLLPctSt,1),"%"), "NA"), "<br/>",
-                     MassEnviroScreen$popLBW, if_else(!is.na(MassEnviroScreen$LBWPctSt), paste0(round(MassEnviroScreen$LBWPctSt,1),"%"), "NA"), "<br/>",
-                     MassEnviroScreen$popPMR, if_else(!is.na(MassEnviroScreen$PMRPctSt), paste0(round(MassEnviroScreen$PMRPctSt,1),"%"), "NA"), "<br/>"
+                     MassEnviroScreen$popHLTH,
+                     if_else(!is.na(MassEnviroScreen$HealthPctStAvg), paste0(round(MassEnviroScreen$HealthPctStAvg,1),"%"),"NA")
+                     # MassEnviroScreen$popASTHMA, paste0(round(MassEnviroScreen$pedAsthmaPctSt,1),"%"), "<br/>",
+                     # MassEnviroScreen$popBLL, if_else(!is.na(MassEnviroScreen$BLLPctSt), paste0(round(MassEnviroScreen$BLLPctSt,1),"%"), "NA"), "<br/>",
+                     # MassEnviroScreen$popLBW, if_else(!is.na(MassEnviroScreen$LBWPctSt), paste0(round(MassEnviroScreen$LBWPctSt,1),"%"), "NA"), "<br/>",
+                     # MassEnviroScreen$popPMR, if_else(!is.na(MassEnviroScreen$PMRPctSt), paste0(round(MassEnviroScreen$PMRPctSt,1),"%"), "NA"), "<br/>"
                      # MassEnviroScreen$popCHD, if_else(!is.na(MassEnviroScreen$CHDPctSt), paste0(round(MassEnviroScreen$CHDPctSt,1),"%"), "NA"), "<br/>",
                      # MassEnviroScreen$popPM25, if_else(!is.na(MassEnviroScreen$PM25PctSt), paste0(round(MassEnviroScreen$PM25PctSt,1),"%"), "NA"), "<br/>",
                      # MassEnviroScreen$popOZONE, if_else(!is.na(MassEnviroScreen$OZONEPctSt), paste0(round(MassEnviroScreen$OZONEPctSt,1),"%"), "NA")
@@ -189,7 +196,7 @@ leaflet() %>%
               color = "yellow",
               label = ~COSUB,
               popup = MES75PopUp,
-              group = "Unfairly Burdened Areas") %>% 
+              group = "Burdened Areas") %>% 
   addPolygons(data = MassEnviroScreen, 
               fillColor = ~MESpal(MassEnviroScore), 
               fillOpacity = 0.5,
@@ -208,7 +215,7 @@ leaflet() %>%
               group = "MassEnviroScore") %>% 
   addLayersControl(
     # baseGroups are toggle radio buttons; only 1 at at time
-    baseGroups = c("Unfairly Burdened Areas", "MassEnviroScore"),
+    baseGroups = c("Burdened Areas", "MassEnviroScore"),
     # overlayGroups are checkbox layers that can all be on or off
     overlayGroups = c("MA EJ Populations", "city/town boundary"),
     options = layersControlOptions(
@@ -219,8 +226,8 @@ leaflet() %>%
             colors = "red", 
             opacity = 0.5,
             title = "MassEnviroScreen",
-            labels = "Unfairly Burdened Areas",
-            layerId = "Unfairly Burdened Areas") %>% 
+            labels = "Burdened Areas",
+            layerId = "Burdened Areas") %>% 
   addLegend(position = "bottomright",  
             pal = MESpal, 
             values = MassEnviroScreen$MassEnviroScore,
@@ -238,7 +245,7 @@ leaflet() %>%
   # A hack to have the legends associated with radio-button "Base Groups" in R leaflet maps toggle along with layers. see https://gist.github.com/noamross/98c2053d81085517e686407096ec0a69
   htmlwidgets::onRender("
     function(el, x) {
-      var initialLegend = 'Unfairly Burdened Areas' // Set the initial legend to be displayed by layerId
+      var initialLegend = 'Burdened Areas' // Set the initial legend to be displayed by layerId
       var myMap = this;
       for (var legend in myMap.controls._controlsById) {
         var el = myMap.controls.get(legend.toString())._container;
@@ -264,7 +271,7 @@ leaflet() %>%
 
 ## MassEnviroScreen scoring methodology
 
-The MassEnviroScreen cumulative impact score model is based on three components representing Pollution and Climate Burden – Exposures and Environmental Effects and Climate Risks – and two components representing Population Characteristics – Sensitive Populations (e.g., in terms of health status and age) and Socioeconomic Factors.
+The MassEnviroScreen cumulative burden score model is based on three components representing Pollution and Climate Burden – Exposures and Environmental Effects and Climate Risks – and two components representing Population Characteristics – Sensitive Populations (e.g., in terms of health status and age) and Socioeconomic Factors.
 
 ### Model characteristics
 
@@ -283,7 +290,7 @@ After the components are scored within Pollution Burden and Climate Risk or Popu
 
 Scores for the pollution burden and climate risk and population characteristics categories are multiplied (rather than added, for example). This multiplication approach is based on research which shows that socioeconomic and health/sensitivity factors are "effect modifiers" that multiply the risks posed by pollutants and climate risks. Various environmental health and emergency response organizations use a similar scoring system: *Risk = Threat x Vulnerability*.
 
-Within the MassEnviroScreen score map, clicking on individual census block groups shows both the final MassEnviroScreen score as well as the Pollution and Climate Burden and the Sensitive Pop SubScores. The Pollution and Climate Burden Subscore represents the percentile rank (0 - 100) of the block group for averaged pollution burden and climate risk component indicators. Similarly, the Sensitive Pop SubScore represents the percentile rank (0 - 100) of the block group for averaged population characteristics component indicators.
+Within the MassEnviroScreen score map, clicking on individual census block groups shows both the final MassEnviroScreen percentile score as well as the Pollution and Climate Burden and the Sensitive Pop SubScores. The Pollution and Climate Burden Subscore represents the percentile rank (0 - 100) of the block group for averaged pollution burden and climate risk component indicators. Similarly, the Sensitive Pop SubScore represents the percentile rank (0 - 100) of the block group for averaged population characteristics component indicators.
 
 ### Model indicators
 
@@ -300,7 +307,7 @@ df <- data.frame(`Environmental Exposures` = c("PM2.5",
                                                "Diesel Particulate Matter", 
                                                "Drinking Water Non-compliance", 
                                                "Air Toxics Cancer Risk", 
-                                               "Respiratory Hazard Index",
+                                               "Air Toxics Respiratory Hazard",
                                                "Proximity to Heavy Traffic"),
                  `Environmental Effects` = c("Pollution Cleanup Sites",
                                              "Groundwater Threats",
@@ -343,15 +350,15 @@ df %>%
 
 There are several key differences between the MassEnviroScreen model approach and the Massachusetts Environmental Justice Population definition:
 
--   The MA EJ Population definition is based entirely on three demographic criteria - percent minority OR percent limited English speaking households, OR percent households below 65% of statewide median household income.
--   MassEnviroScreen defines "Unfairly Burdened Areas" based on a cumulative impact score that integrates demographic criteria, health status, and environmental conditions across more than two dozen indicators, OR percent of limited English speaking households, OR percent of households below 65% of statewide median household income, OR presence of federally recognized tribal land.
+-   The MA EJ Population definition is based on three demographic criteria - percent minority, OR percent limited English speaking households, OR percent households below 65% of statewide median household income.
+-   MassEnviroScreen defines "Burdened Areas" based on a cumulative burden score that integrates demographic criteria, health status, and environmental conditions across 30 indicators, OR percent of households below 65% of statewide median household income, OR average percent of key health indicators equals or exceeds 150% of the statewide average.
 -   MassEnviroScreen does not use race or ethnicity as indicators.
 
 Both approaches, however, are based on important decisions about which indicators to use, and what threshold to use for prioritization. The latter are important policy decisions that may not be resolved by a technical analysis.
 
 ### Coverage of the state
 
-Under the current Massachusetts Environmental Justice Population definition `{r} round(sum(MassEnviroScreen$EJ == "Yes")/nrow(MassEnviroScreen)*100,1)`% of Massachusetts block groups are classified as environmental justice communities. These environmental justice block groups occur in `{r} length(unique(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",]$COSUB))` (`{r} round(length(unique(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",]$COSUB))/351*100,1)`%) of Massachusetts municipalities (based on American Community Survey 2023 5-year estimates). By contrast, `{r} round(nrow(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",])/nrow(MassEnviroScreen)*100,1)`% of Massachusetts block groups meet the criteria for MassEnviroScreen's Unfairly Burdened Areas. The latter occur in `{r} length(unique(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",]$COSUB))` (`{r} round(length(unique(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",]$COSUB))/351*100,1)`%) of Massachusetts municipalities. A breakdown of the number and percentage of census block groups meeting the various criteria that define a an Unfairly Burdened Area are displayed in @tbl-criteria. Note that percentages do not total to 100% because block groups may meet multiple criteria.
+Under the current Massachusetts Environmental Justice Population definition `{r} round(sum(MassEnviroScreen$EJ == "Yes")/nrow(MassEnviroScreen)*100,1)`% of Massachusetts block groups are classified as environmental justice communities. These environmental justice block groups occur in `{r} length(unique(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",]$COSUB))` (`{r} round(length(unique(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",]$COSUB))/351*100,1)`%) of Massachusetts municipalities (based on American Community Survey 2023 5-year estimates). By contrast, `{r} round(nrow(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",])/nrow(MassEnviroScreen)*100,1)`% of Massachusetts block groups meet the criteria for MassEnviroScreen's  Burdened Areas. The latter occur in `{r} length(unique(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",]$COSUB))` (`{r} round(length(unique(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",]$COSUB))/351*100,1)`%) of Massachusetts municipalities. A breakdown of the number and percentage of census block groups meeting the various criteria that define a an Burdened Area are displayed in @tbl-criteria. Note that percentages do not total to 100% because block groups may meet multiple criteria.
 
 ```{r}
 #| echo: false
@@ -360,29 +367,32 @@ Under the current Massachusetts Environmental Justice Population definition `{r}
 
 # create table with breakdown of UBAs by criterion
 MES75s <- MassEnviroScreen %>% 
-  filter(MassEnviroScore >= 75) %>% 
+  filter(round(MassEnviroScore) >= 75) %>% 
   nrow()
 MHHIs <- MassEnviroScreen %>% 
-  filter(medHHincMAPCT <= 65) %>% 
+  filter(round(medHHincMAPCT) <= 65) %>% 
   nrow()
-LEPs <- MassEnviroScreen %>% 
-  filter(limitEngpctE >= 25) %>% 
+HLTH <- MassEnviroScreen %>% 
+  filter(round(HealthPctStAvg) >= 150) %>% 
   nrow()
-LARs <- MassEnviroScreen %>% 
-  filter(LARName != "None") %>% 
-  nrow()
-Asthmas <- MassEnviroScreen %>% 
-  filter(pedAsthmaPctSt > 200) %>% 
-  nrow()
-LBWs <- MassEnviroScreen %>% 
-  filter(LBWPctSt > 200) %>% 
-  nrow()
-BLLs <- MassEnviroScreen %>% 
-  filter(LBWPctSt > 200) %>% 
-  nrow()
-PMRs <- MassEnviroScreen %>% 
-  filter(PMRPctSt > 200) %>% 
-  nrow()
+# LEPs <- MassEnviroScreen %>% 
+#   filter(limitEngpctE >= 25) %>% 
+#   nrow()
+# LARs <- MassEnviroScreen %>% 
+#   filter(LARName != "None") %>% 
+#   nrow()
+# Asthmas <- MassEnviroScreen %>% 
+#   filter(pedAsthmaPctSt > 200) %>% 
+#   nrow()
+# LBWs <- MassEnviroScreen %>% 
+#   filter(LBWPctSt > 200) %>% 
+#   nrow()
+# BLLs <- MassEnviroScreen %>% 
+#   filter(LBWPctSt > 200) %>% 
+#   nrow()
+# PMRs <- MassEnviroScreen %>% 
+#   filter(PMRPctSt > 200) %>% 
+#   nrow()
 # CHDs <- MassEnviroScreen %>% 
 #   filter(CHDPctSt > 200) %>% 
 #   nrow()
@@ -394,18 +404,21 @@ PMRs <- MassEnviroScreen %>%
 #   nrow()
 
 # create the table
-data.frame(Indicator = c("MassEnviroScreen Score >= 75%tile", "Median Household Income <= 65% MA",
-                         "Limited English Households >= 25%", "Tribal Territory", 
-                         "Pediatric Asthma >= 200% MA", "Low Birthweight >= 200% MA", 
-                         "Elevated Blood Lead Levels >= 200% MA", 
-                         "Premature Mortality >= 200% MA"),
-                   `Block Groups` = c(MES75s, MHHIs, LEPs, LARs, Asthmas, LBWs, BLLs, PMRs)) %>% 
+data.frame(Indicator = c("MassEnviroScreen Score >= 75%tile", 
+                         "Median Household Income <= 65% MA",
+                         "Avg Health Percent of State >= 150%"
+                         # "Limited English Households >= 25%", "Tribal Territory", 
+                         # "Pediatric Asthma >= 200% MA", "Low Birthweight >= 200% MA", 
+                         # "Elevated Blood Lead Levels >= 200% MA", 
+                         # "Premature Mortality >= 200% MA"
+                         ),
+                   `Block Groups` = c(MES75s, MHHIs, HLTH)) %>% 
   mutate(PctUBAs = paste0(round(Block.Groups/MassEnviroScreen %>% 
                                   filter(UBA=="Yes") %>% nrow()*100, 1),"%"),
          PctStateBGs = paste0(round(Block.Groups/nrow(MassEnviroScreen)*100, 1),"%")) %>% 
   arrange(., desc(Block.Groups)) %>% 
-  kable(caption = "Criteria for Unfairly Burdened Areas", 
-        col.names = c("UBA Criteria", "Number of Block Groups", "Pct of UBAs", 
+  kable(caption = "Criteria for Burdened Areas", 
+        col.names = c("BA Criteria", "Number of Block Groups", "Pct of BAs", 
                       "Pct of State Block Groups"),
         align = "l") %>% 
   kable_styling(bootstrap_options = c("striped", "hover"))
@@ -413,7 +426,7 @@ data.frame(Indicator = c("MassEnviroScreen Score >= 75%tile", "Median Household 
 
 ### Overlap with EJ criteria
 
-Although MassEnviroScreen identifies a smaller number of census block groups, there is considerable overlap between communities meeting the state's current environmental justice population definition and the criteria for Unfairly Burdened Areas. Although `{r} round(nrow(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",])/nrow(MassEnviroScreen)*100,1)`% of census block groups in the state meet the criteria for Unfairly Burdened Areas, `{r}  round(nrow(MassEnviroScreen[(MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None") & MassEnviroScreen$EJ=="Yes",])/nrow(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",])*100,1)`% of block groups defined as environmental justice populations also meet the Unfairly Burdened Areas criteria. @fig-EJoverlap shows the degree of overlap between the various criteria of environmental justice populations and Unfairly Burdened Areas. There is 100% overlap with all state Environmental Justice Population criteria save for the Minority-only category. Only 36% of census block groups defined as a Environmental Justice Population based solely on the Minority criterion (i.e., 40% or more minority) overlap with Unfairly Burdened Areas as defined here.
+Although MassEnviroScreen identifies a smaller number of census block groups, there is considerable overlap between communities meeting the state's current environmental justice population definition and the criteria for Burdened Areas. Although `{r} round(nrow(MassEnviroScreen[MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None",])/nrow(MassEnviroScreen)*100,1)`% of census block groups in the state meet the criteria for Burdened Areas, `{r}  round(nrow(MassEnviroScreen[(MassEnviroScreen$MassEnviroScore >= 75|MassEnviroScreen$medHHincMAPCT<=65|MassEnviroScreen$limitEngpctE>=25|MassEnviroScreen$LARName != "None") & MassEnviroScreen$EJ=="Yes",])/nrow(MassEnviroScreen[MassEnviroScreen$EJ=="Yes",])*100,1)`% of block groups defined as environmental justice populations also meet the Burdened Areas criteria. @fig-EJoverlap shows the degree of overlap between the various criteria of environmental justice populations and Burdened Areas. There is 100% overlap with all state Environmental Justice Population criteria save for the Minority-only category. Only 35% of census block groups defined as a Environmental Justice Population based solely on the Minority criterion (i.e., 40% or more minority), and 33% of those defined solely on limited English proficiency, overlap with Burdened Areas as defined here.
 
 ```{r}
 #| echo: false
@@ -434,7 +447,7 @@ MassEnviroScreen %>%
   ggplot(aes(x = reorder(EJ_CRIT_DESC, pct), y = pct, fill = EJ_CRIT_DESC)) +
   geom_col() +
   coord_flip() +
-  labs(title = "MA EJ Population Criteria Overlap with\nMassEnviroScreen Unfairly Burdened Areas", caption = "Based on percentage of EJ census block groups") +
+  labs(title = "MA EJ Population Criteria Overlap with\nMassEnviroScreen Burdened Areas", caption = "Based on percentage of EJ census block groups") +
   xlab("") + ylab("") +
   scale_y_continuous(labels = scales::percent_format(scale = 1)) +
   scale_fill_manual(values = c(
@@ -449,9 +462,9 @@ MassEnviroScreen %>%
   geom_text(aes(label = pctLabel), vjust = 0.5, hjust = 1.1, colour = "white")
 ```
 
-### MassEnviroScreen cumulative impact scores by EJ criteria
+### MassEnviroScreen cumulative burden scores by EJ criteria
 
-@fig-EJscores shows the distribution of MassEnviroScreen cumulative impact scores for block groups meeting each of the environmental justice criteria. In comparison to non-EJ block groups in Massachusetts, median cumulative impact scores for six out of the seven EJ criteria are above the 50th percentile. In other words, most block groups meeting the state's current environmental justice population definition have cumulative impact scores that are higher than 50% of block groups across the state overall. In addition, five out of the seven also have median values above the 75th percentile or threshold for Unfairly Burdened Areas.
+@fig-EJscores shows the distribution of MassEnviroScreen cumulative burden scores for block groups meeting each of the environmental justice criteria. In comparison to non-EJ block groups in Massachusetts, median cumulative burden scores for six out of the seven EJ criteria are above the 50th percentile. In other words, most block groups meeting the state's current environmental justice population definition have cumulative burden scores that are higher than 50% of block groups across the state overall. In addition, five out of the seven also have median values above the 75th percentile or threshold for Burdened Areas.
 
 ```{r}
 #| echo: false
