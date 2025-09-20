@@ -921,8 +921,8 @@ MassEnviroScreen <- block_groups(state = "MA", year = 2023, cb = TRUE) %>%
 mutate(HealthPctStAvg = mean(c_across(c(LBWPctSt, BLLPctSt, pedAsthmaPctSt, PMRPctSt)), na.rm = TRUE)) %>% 
   ungroup() %>% 
   mutate(UBA = if_else(round(MassEnviroScore,0) >= 75 | 
-                         round(medHHincMAPCT,0) <= 65 | 
-                         round(HealthPctStAvg,0) >= 150,
+                         round(medHHincMAPCT,0) <= 65, 
+                         # round(HealthPctStAvg,0) >= 150,
                          # round(limitEngpctE,0) >= 25 | 
                          # LARName != "None" |
                          # round(pedAsthmaPctSt,0) >= 200 | # state avg 10.5
@@ -938,10 +938,10 @@ mutate(HealthPctStAvg = mean(c_across(c(LBWPctSt, BLLPctSt, pedAsthmaPctSt, PMRP
                           "<b style=\"color:white;background-color:#053061;\">MassEnviroScore Percentile:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">MassEnviroScore Percentile:</b> "),
          popMHI = if_else(medHHincMAPCT <= 65,
                           "<b style=\"color:white;background-color:#FF0000;\">Median Household Income:</b> ",
-                          "<b style=\"color:white;background-color:#053061;\">Median Household Income:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Median Household Income:</b> "),
-         popHLTH = if_else(HealthPctStAvg >= 150,
-                          "<b style=\"color:white;background-color:#FF0000;\">Avg of Health Indicators (% of State Avg):</b> ",
-                          "<b style=\"color:white;background-color:#053061;\">Avg of Health Indicators (% of State Avg):</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Avg of Health Indicators (% of State Avg):</b> ")
+                          "<b style=\"color:white;background-color:#053061;\">Median Household Income:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Median Household Income:</b> ")
+         # popHLTH = if_else(HealthPctStAvg >= 150,
+         #                  "<b style=\"color:white;background-color:#FF0000;\">Avg of Health Indicators (% of State Avg):</b> ",
+         #                  "<b style=\"color:white;background-color:#053061;\">Avg of Health Indicators (% of State Avg):</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Avg of Health Indicators (% of State Avg):</b> ")
          # popLEP = if_else(limitEngpctE >= 25,
          #                  "<b style=\"color:white;background-color:#FF0000;\">Limited English Households:</b> ",
          #                  "<b style=\"color:white;background-color:#053061;\">Limited English Households:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Limited English Households:</b> "),
