@@ -148,13 +148,13 @@ DEP_PMR_tract <- read_xlsx("data/DEP/PMR_Tracts_PMR_PctSt_Percentile_2019_2023_r
 # load ejscreen variables with percentile values; create for PRE1960PCT; rename
 ejscreen <- read_csv("data/EJSCREEN24/EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_VI.csv") %>% 
   filter(ST_ABBREV == "MA") %>% 
-  select(ID, PM25, P_PM25, OZONE, P_OZONE, DSLPM, P_DSLPM, NO2, P_NO2, PTRAF, P_PTRAF, 
-         DWATER, P_DWATER) %>% 
+  select(ID, PM25, P_PM25, OZONE, P_OZONE, NO2, P_NO2, 
+         PTRAF, P_PTRAF, DWATER, P_DWATER) %>% 
   rename_with(function(x) {gsub("P_", "EXPpctile", x)}) %>% 
   mutate(across(PM25:EXPpctileDWATER, ~replace_na(.x, 0)))
 
 
-# Use EPA's 2020 AirToxScreen total cancer risk at block level and aggregate to block groups. See https://www.epa.gov/AirToxScreen/2020-airtoxscreen-assessment-results
+# Use EPA's 2020 AirToxScreen total cancer risk at block level and aggregate to block groups using population-weighted mean. See https://www.epa.gov/AirToxScreen/2020-airtoxscreen-assessment-results
 airtox2020_blkgrp <- read_xlsx("data/EPA/Region1_CancerRisk_by_block_srcgrp.xlsx") %>% 
   filter(State == "MA") %>% 
   rowwise() %>% 
@@ -167,7 +167,19 @@ airtox2020_blkgrp <- read_xlsx("data/EPA/Region1_CancerRisk_by_block_srcgrp.xlsx
   ungroup() %>% 
   mutate(CancerRisk = replace_na(CancerRisk, 0), 
          EXPpctileCancerRisk = percent_rank(CancerRisk)*100)
-# Use EPA 2019 AirToxScreen Respiratory Hazard Index at tract level. Note that this uses 2010 census tract boundaries. Need to use spatial join to assign to block groups. See https://www.epa.gov/AirToxScreen/2019-airtoxscreen-assessment-results 
+
+# For Diesel PM, use EPA's 2020 AirToxScreen 2020 National Concentration Summaries by Region - Ambient Concentrations at block level and aggregate to block groups using population-weighted mean. See https://www.epa.gov/AirToxScreen/2020-airtoxscreen-assessment-results
+airtoxDSLPM2020_blkgrp <- read_xlsx("data/EPA/Region1_2020ATS_Ambient_Concentrations.xlsx") %>% 
+  filter(State == "MA") %>% 
+  select(Block, Population, `DIESEL PM`) %>% 
+  mutate(GEOID = str_sub(Block, 1,12)) %>% 
+  group_by(GEOID) %>% 
+  summarize(DSLPM = weighted.mean(`DIESEL PM`, Population)) %>% 
+  ungroup() %>% 
+  mutate(DSLPM = replace_na(DSLPM, 0), 
+         EXPpctileDSLPM = percent_rank(DSLPM)*100)
+
+# Use EPA 2019 AirToxScreen Respiratory Hazard Index at tract level. Note that this uses 2010 census tract boundaries. Spatially interpolate to block groups using areal weighting method. See https://www.epa.gov/AirToxScreen/2019-airtoxscreen-assessment-results 
 ma_tracts2010 <- tracts(state = "MA", year = 2019) %>% 
   select(GEOID) %>% 
   st_transform(., crs = st_crs(ma_blkgrp23))
@@ -836,6 +848,8 @@ MassEnviroScreen <- ma_blkgrp23 %>%
   select(GEOID, GEOID_TRACT, COSUB, COUNTYFP) %>% 
   left_join(., ejscreen, by = c("GEOID" = "ID")) %>% 
   left_join(., select(airtox2020_blkgrp, GEOID, CancerRisk, EXPpctileCancerRisk), 
+            by = "GEOID") %>% 
+  left_join(., select(airtoxDSLPM2020_blkgrp, GEOID, DSLPM, EXPpctileDSLPM), 
             by = "GEOID") %>% 
   left_join(., select(airtox2019_blkgrp, GEOID, `Respiratory HI`, EXPpctileRespHI), 
             by = "GEOID") %>% 
