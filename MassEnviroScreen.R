@@ -77,7 +77,7 @@ hhburden <- read_csv("data/CHAS/140/Table12.csv") %>%
             hhburden = (T12_est7 + T12_est11 + T12_est24 + T12_est28 + T12_est41 + T12_est45 + 
                           T12_est58 + T12_est62 + T12_est75 + T12_est79 + T12_est93 + T12_est97 
                         + T12_est110 + T12_est114 + T12_est127 + T12_est131 + T12_est144 + 
-                          T12_est148 + T12_est161 + T12_est166)/T12_est1 * 100) %>% 
+                          T12_est148 + T12_est161 + T12_est165)/T12_est1 * 100) %>% 
   mutate(SEpctileHHB = percent_rank(hhburden)*100,
          geoid2 = str_trunc(geoid, 11 ,"left", ellipsis = ""))
 
