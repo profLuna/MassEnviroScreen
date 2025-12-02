@@ -11,7 +11,7 @@ options(tigris_use_cache = TRUE)
 ma_blkgrp23pov <- get_acs(geography = "block group", year = 2023, state = "MA", output = "wide",
                           variables = c(povHHStatus = "B17101_001",
                                         povHHBelow = "B17101_002")) %>% 
-  mutate(povHHpctE = povHHBelowE/povHHStatusE*100,
+  mutate(povHHpctE = if_else(povHHStatusE > 0, povHHBelowE/povHHStatusE*100, 0),
          povHHpctM = moe_prop(num = povHHBelowE, denom = povHHStatusE, moe_num = povHHBelowM,
                               moe_denom = povHHStatusM)*100) %>% 
   select(-NAME, -starts_with("povHHStatus")) %>% 
@@ -30,7 +30,7 @@ ma_blkgrp23HS <- get_acs(geography = "block group", year = 2023, state = "MA",
             HSlessM = moe_sum(moe, HSlessE)) %>% 
   ungroup() %>% 
   left_join(., ma_blkgrp23edu, by = "GEOID") %>% 
-  mutate(HSlesspctE = HSlessE/popE*100, 
+  mutate(HSlesspctE = if_else(popE > 0, HSlessE/popE*100, 0), 
          HSlesspctM = moe_prop(num = HSlessE, denom = popE, moe_num = HSlessM, 
                                moe_denom = popM)*100) %>% 
   select(-popE, -popM) %>% 
@@ -50,7 +50,7 @@ ma_blkgrp23language <- get_acs(geography = "block group", year = 2023, state = "
             limitEngM = moe_sum(moe, limitEngE)) %>% 
   ungroup() %>% 
   left_join(., ma_blkgrp23langpop, by = "GEOID") %>%
-  mutate(limitEngpctE = limitEngE/popE*100, 
+  mutate(limitEngpctE = if_else(popE > 0, limitEngE/popE*100, 0), 
          limitEngpctM = moe_prop(num = limitEngE, denom = popE, moe_num = limitEngM, 
                                  moe_denom = popM)*100) %>% 
   select(-popE, -popM) %>% 
@@ -61,7 +61,7 @@ rm(ma_blkgrp23langpop)
 ma_blkgrp23employ <- get_acs(geography = "block group", year = 2023, state = "MA", 
                              variables = c(civemp = "B23025_003",
                                            unemp = "B23025_005"), output = "wide") %>% 
-  mutate(unemploypctE = unempE/civempE*100, 
+  mutate(unemploypctE = if_else(civempE > 0, unempE/civempE*100, 0), 
          unemploypctM = moe_prop(num = unempE, denom = civempE, moe_num = unempM, 
                                  moe_denom = civempM)) %>% 
   select(-NAME, -starts_with("civ")) %>% 
@@ -74,10 +74,10 @@ ma_blkgrp23employ <- get_acs(geography = "block group", year = 2023, state = "MA
 hhburden <- read_csv("data/CHAS/140/Table12.csv") %>% 
   filter(st == "25") %>% 
   transmute(geoid = geoid, tract = tract, 
-            hhburden = (T12_est7 + T12_est11 + T12_est24 + T12_est28 + T12_est41 + T12_est45 + 
+            hhburden = if_else(T12_est1 > 0, (T12_est7 + T12_est11 + T12_est24 + T12_est28 + T12_est41 + T12_est45 + 
                           T12_est58 + T12_est62 + T12_est75 + T12_est79 + T12_est93 + T12_est97 
                         + T12_est110 + T12_est114 + T12_est127 + T12_est131 + T12_est144 + 
-                          T12_est148 + T12_est161 + T12_est165)/T12_est1 * 100) %>% 
+                          T12_est148 + T12_est161 + T12_est165)/T12_est1 * 100, 0)) %>% 
   mutate(SEpctileHHB = percent_rank(hhburden)*100,
          geoid2 = str_trunc(geoid, 11 ,"left", ellipsis = ""))
 
@@ -150,8 +150,7 @@ ejscreen <- read_csv("data/EJSCREEN24/EJScreen_2024_BG_StatePct_with_AS_CNMI_GU_
   filter(ST_ABBREV == "MA") %>% 
   select(ID, PM25, P_PM25, OZONE, P_OZONE, NO2, P_NO2, 
          PTRAF, P_PTRAF, DWATER, P_DWATER) %>% 
-  rename_with(function(x) {gsub("P_", "EXPpctile", x)}) %>% 
-  mutate(across(PM25:EXPpctileDWATER, ~replace_na(.x, 0)))
+  rename_with(function(x) {gsub("P_", "EXPpctile", x)})
 
 
 # Use EPA's 2020 AirToxScreen total cancer risk at block level and aggregate to block groups using population-weighted mean. See https://www.epa.gov/AirToxScreen/2020-airtoxscreen-assessment-results
@@ -165,8 +164,7 @@ airtox2020_blkgrp <- read_xlsx("data/EPA/Region1_CancerRisk_by_block_srcgrp.xlsx
   group_by(GEOID) %>% 
   summarize(CancerRisk = weighted.mean(`Total Cancer Risk (per million)`, Population)) %>% 
   ungroup() %>% 
-  mutate(CancerRisk = replace_na(CancerRisk, 0), 
-         EXPpctileCancerRisk = percent_rank(CancerRisk)*100)
+  mutate(EXPpctileCancerRisk = percent_rank(CancerRisk)*100)
 
 # For Diesel PM, use EPA's 2020 AirToxScreen 2020 National Concentration Summaries by Region - Ambient Concentrations at block level and aggregate to block groups using population-weighted mean. See https://www.epa.gov/AirToxScreen/2020-airtoxscreen-assessment-results
 airtoxDSLPM2020_blkgrp <- read_xlsx("data/EPA/Region1_2020ATS_Ambient_Concentrations.xlsx") %>% 
@@ -176,8 +174,7 @@ airtoxDSLPM2020_blkgrp <- read_xlsx("data/EPA/Region1_2020ATS_Ambient_Concentrat
   group_by(GEOID) %>% 
   summarize(DSLPM = weighted.mean(`DIESEL PM`, Population)) %>% 
   ungroup() %>% 
-  mutate(DSLPM = replace_na(DSLPM, 0), 
-         EXPpctileDSLPM = percent_rank(DSLPM)*100)
+  mutate(EXPpctileDSLPM = percent_rank(DSLPM)*100)
 
 # Use EPA 2019 AirToxScreen Respiratory Hazard Index at tract level. Note that this uses 2010 census tract boundaries. Spatially interpolate to block groups using areal weighting method. See https://www.epa.gov/AirToxScreen/2019-airtoxscreen-assessment-results 
 ma_tracts2010 <- tracts(state = "MA", year = 2019) %>% 
@@ -194,7 +191,7 @@ airtox2019_blkgrp <- read_xlsx("data/EPA/2019_National_RespHI_by_tract_srcgrp.xl
   st_interpolate_aw(x = .["Respiratory HI"], to = ma_blkgrp23, 
                     extensive = FALSE, keep_NA = TRUE) %>% 
   transmute(GEOID = ma_blkgrp23$GEOID,
-            `Respiratory HI` = replace_na(Respiratory.HI, 0),
+            `Respiratory HI` = Respiratory.HI,
             EXPpctileRespHI = percent_rank(`Respiratory HI`)*100) %>% 
   st_drop_geometry(.)
 
@@ -711,13 +708,13 @@ IL_ATTAINS_2022 <- read.dbf("data/MASSGIS/IL_ATTAINS_2022.dbf") %>%
 IL_2022_ARC <- readRDS("data/MASSGIS/IL_2022_ARC.rds")
 IL_2022_POLY <- readRDS("data/MASSGIS/IL_2022_POLY.rds")
 
-# filter based on distances, join overlapping block groups to assign GEOID, join wtih attributes, group by GEOID, and sum unique pollutants
+# filter based on distances, join overlapping block groups to assign GEOID, join with attributes, group by GEOID, and sum unique pollutants
 arc_pollutants <- IL_2022_ARC %>% 
   mutate(AU_SIZEkm = AU_SIZE*1.609344) %>% # convert miles to km
   filter((AU_SIZEkm <= 100 & dists <= 1000) | (AU_SIZEkm > 100 & dists < 2000)) %>% 
   st_join(., select(ma_blkgrp23, GEOID)) %>% 
   st_drop_geometry(.) %>% 
-  inner_join(IL_ATTAINS_2022, ., by = "AU_ID") %>% 
+  inner_join(IL_ATTAINS_2022, ., by = "AU_ID", relationship = "many-to-many") %>% 
   group_by(GEOID) %>% 
   summarize(cause_cntArc = n_distinct(CAUSE_UNIQUE))
 
@@ -726,7 +723,7 @@ poly_pollutants <- IL_2022_POLY %>%
   filter((AREAkm2 <= 25 & dists <= 1000) | (AREAkm2 > 25 & dists < 2000)) %>% 
   st_join(., select(ma_blkgrp23, GEOID)) %>% 
   st_drop_geometry(.) %>% 
-  inner_join(IL_ATTAINS_2022, ., by = "AU_ID") %>% 
+  inner_join(IL_ATTAINS_2022, ., by = "AU_ID", relationship = "many-to-many") %>% 
   group_by(GEOID) %>% 
   summarize(cause_cntPoly = n_distinct(CAUSE_UNIQUE))
 
@@ -736,9 +733,10 @@ IL_sum <- ma_blkgrp23 %>%
   select(GEOID) %>% 
   left_join(., arc_pollutants, by = "GEOID") %>% 
   left_join(., poly_pollutants, by = "GEOID") %>% 
-  replace_na(., list(cause_cntArc = 0, cause_cntPoly = 0)) %>% 
-  mutate(IL_count = cause_cntArc + cause_cntPoly,
-         EFFCTpctileIL = percent_rank(IL_count)*100)
+  rowwise() %>% 
+  mutate(IL_count = sum(c_across(cause_cntArc:cause_cntPoly), na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  mutate(EFFCTpctileIL = percent_rank(IL_count)*100)
 
 
 
@@ -748,8 +746,9 @@ IL_sum <- ma_blkgrp23 %>%
 drought <- read_csv("data/USDA/dm_export_20190101_20250504.csv") %>% 
   filter(MapDate < 20250000 & MapDate > 20190000) %>% # limit to 2019 to 2024
   rowwise() %>% 
-  mutate(droughtSum = sum(D2, D3, D4), # sum severe/extreme/exceptional drought pcts per week
+  mutate(droughtSum = sum(c_across(D2:D4), na.rm = TRUE), # sum severe/extreme/exceptional drought pcts per week
          CountyFIPS = str_sub(FIPS, start = -3)) %>% 
+  ungroup() %>% 
   group_by(CountyFIPS) %>% 
   summarize(droughtSum = sum(droughtSum)) %>% # aggregate all weeks by county
   mutate(CLIMpctilDrought = percent_rank(droughtSum)*100)
@@ -790,8 +789,8 @@ flood <- bind_rows(NFHL, Q3) %>%
 flood <- ma_blkgrp23 %>% 
   transmute(GEOID = GEOID,
             Area = as.numeric(st_area(.))) %>% 
-  inner_join(., flood, by = "GEOID") %>% 
-  replace_na(., list(fldArea = 0))
+  inner_join(., flood, by = "GEOID")
+
 # isolate NRI block groups that are not present in flood, bind to flood, and compute pct flood
 flood <- anti_join(NRI, st_drop_geometry(flood), by = "GEOID") %>% 
   bind_rows(flood, .) %>% 
@@ -883,8 +882,12 @@ MassEnviroScreen <- ma_blkgrp23 %>%
   left_join(., select(flood, GEOID, pctFldArea, CLIMpctilFLD), by = "GEOID") %>% 
   left_join(., select(heat, GEOID, Heatmean, CLIMpctilHEAT), by = "GEOID") %>% 
   mutate(across(c(starts_with("EXPpctile"), starts_with("EFFCTpctile"), 
-                  starts_with("CLIMpctil")), 
-                ~replace_na(.x, 0))) %>% 
+                  starts_with("CLIMpctil"))
+                )
+         ) %>% 
+  replace_na(list(cleanup_score = 0, EFFCTpctileCleanup = 0, gwater_score = 0, 
+                  EFFCTpctileGrndWater = 0, BWPScore = 0, EFFCTpctileBWPMAJOR_PT = 0, 
+                  pctFldArea = 0, CLIMpctilFLD = 0)) %>% # NA means hazard not present
   rowwise() %>% # compute average component scores
   mutate(AvgExposure = mean(c_across(starts_with("EXPpctile")), na.rm = TRUE),
          AvgEffect = mean(c_across(starts_with("EFFCTpctile")), na.rm = TRUE),
@@ -928,24 +931,11 @@ MassEnviroScreen <- block_groups(state = "MA", year = 2023, cb = TRUE) %>%
   mutate(LBWPctSt = LBW/2.17*100, # state average from DPH
          BLLPctSt = BLL/18.4*100) %>% 
   rowwise() %>% 
-         # PMRPctSt = PMR/292.5*100,
-         # CHDPctSt = `Coronary heart disease among adults`/4.6*100,
-         # PM25PctSt = PM25/6.52*100,
-         # OZONEPctSt = OZONE/56.7*100,
-mutate(HealthPctStAvg = mean(c_across(c(LBWPctSt, BLLPctSt, pedAsthmaPctSt, PMRPctSt)), na.rm = TRUE)) %>% 
+  mutate(HealthPctStAvg = mean(c_across(c(LBWPctSt, BLLPctSt, pedAsthmaPctSt, PMRPctSt)), 
+                               na.rm = TRUE)) %>% 
   ungroup() %>% 
   mutate(UBA = if_else(round(MassEnviroScore,0) >= 75 | 
                          round(medHHincMAPCT,0) <= 65, 
-                         # round(HealthPctStAvg,0) >= 150,
-                         # round(limitEngpctE,0) >= 25 | 
-                         # LARName != "None" |
-                         # round(pedAsthmaPctSt,0) >= 200 | # state avg 10.5
-                         # round(LBWPctSt,0) >= 200 |
-                         # round(BLLPctSt,0) >= 200 |
-                         # round(PMRPctSt,0) >= 200 | # state avg 292.75758492
-                         # CHDPctSt > 200 |
-                         # round(PM25PctSt,0) >= 200 |
-                         # round(OZONEPctSt,0) >= 200,
                        "Yes", "No")) %>% 
   mutate(popMES = if_else(MassEnviroScore >= 75, 
                           "<b style=\"color:white;background-color:#FF0000;\">MassEnviroScore Percentile:</b> ",
@@ -953,37 +943,6 @@ mutate(HealthPctStAvg = mean(c_across(c(LBWPctSt, BLLPctSt, pedAsthmaPctSt, PMRP
          popMHI = if_else(medHHincMAPCT <= 65,
                           "<b style=\"color:white;background-color:#FF0000;\">Median Household Income:</b> ",
                           "<b style=\"color:white;background-color:#053061;\">Median Household Income:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Median Household Income:</b> ")
-         # popHLTH = if_else(HealthPctStAvg >= 150,
-         #                  "<b style=\"color:white;background-color:#FF0000;\">Avg of Health Indicators (% of State Avg):</b> ",
-         #                  "<b style=\"color:white;background-color:#053061;\">Avg of Health Indicators (% of State Avg):</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Avg of Health Indicators (% of State Avg):</b> ")
-         # popLEP = if_else(limitEngpctE >= 25,
-         #                  "<b style=\"color:white;background-color:#FF0000;\">Limited English Households:</b> ",
-         #                  "<b style=\"color:white;background-color:#053061;\">Limited English Households:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Limited English Households:</b> "),
-         # popLAR = if_else(LARName != "None",
-         #                  "<b style=\"color:white;background-color:#FF0000;\">Tribal Territory:</b> ",
-         #                  "<b style=\"color:white;background-color:#053061;\">Tribal Territory:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Tribal Territory:</b> "),
-         # popASTHMA = if_else(pedAsthmaPctSt >= 200,
-         #                  "<b style=\"color:white;background-color:#FF0000;\">Pediatric Asthma:</b> ",
-         #                  "<b style=\"color:white;background-color:#053061;\">Pediatric Asthma:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Pediatric Asthma:</b> "),
-         # popLBW = if_else(LBWPctSt >= 200,
-         #                     "<b style=\"color:white;background-color:#FF0000;\">Low Birth Weight:</b> ",
-         #                     "<b style=\"color:white;background-color:#053061;\">Low Birth Weight:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Low Birth Weight:</b> "),
-         # popBLL = if_else(BLLPctSt >= 200,
-         #                  "<b style=\"color:white;background-color:#FF0000;\">Elevated Blood Lead:</b> ",
-         #                  "<b style=\"color:white;background-color:#053061;\">Elevated Blood Lead:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Elevated Blood Lead:</b> "),
-         # popPMR = if_else(PMRPctSt >= 200,
-         #                  "<b style=\"color:white;background-color:#FF0000;\">Premature Mortality:</b> ",
-         #                  "<b style=\"color:white;background-color:#053061;\">Premature Mortality:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Premature Mortality:</b> ")
-         # popCHD = if_else(CHDPctSt > 200,
-         #                  "<b style=\"color:white;background-color:#FF0000;\">Heart Disease:</b> ",
-         #                  "<b style=\"color:white;background-color:#053061;\">Heart Disease:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">Heart Disease:</b> "),
-         # popPM25 = if_else(PM25PctSt >= 200,
-         #                  "<b style=\"color:white;background-color:#FF0000;\">PM25:</b> ",
-         #                  "<b style=\"color:white;background-color:#053061;\">PM25:</b> ", missing = "<b style=\"color:white;background-color:#053061;\">PM25:</b> "),
-         # popOZONE = if_else(OZONEPctSt >= 200,
-         #                   "<b style=\"color:white;background-color:#FF0000;\">Ozone:</b> ",
-         #                   "<b style=\"color:white;background-color:#053061;\">Ozone:</b> ",
-         #                   missing = "<b style=\"color:white;background-color:#053061;\">Ozone:</b> ")
          )
 
 
