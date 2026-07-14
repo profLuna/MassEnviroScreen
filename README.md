@@ -34,7 +34,7 @@ The MassEnviroScreen cumulative burden score model is based on three components 
 
 Figure 1 - MassEnviroScreen components
 
-![](Components.png){fig-alt="Diagram of MassEnviroScreen components" fig-align="center" width="388"}
+<img src="/Components.png" alt="Diagram of MassEnviroScreen components" style="width:70%; height:auto;">
 
 ## Model Characteristics
 
