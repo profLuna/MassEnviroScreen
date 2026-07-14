@@ -34,7 +34,7 @@ The MassEnviroScreen cumulative burden score model is based on three components 
 
 Figure 1 - MassEnviroScreen components
 
-<img src="/Components.png" alt="Diagram of MassEnviroScreen components" style="width:70%; height:auto;">
+<img align="center" src="/Components.png" alt="Diagram of MassEnviroScreen components" style="width:50%; height:auto;">
 
 ## Model Characteristics
 
@@ -68,7 +68,7 @@ The MassEnviroScreen score model is computed from 30 statewide environmental, so
 
 Figure 2 - MassEnviroScreen Indicators
 
-![](MassEnviroScreenPollutBurdenIndicators2.png){fig-alt="Diagram of MassEnviroScreen indicators hierarchy tree"}
+![Diagram of MassEnviroScreen indicators hierarchy tree](MassEnviroScreenPollutBurdenIndicators2.png)
 
 ### Pollution and Climate Burden Indicators
 
@@ -126,7 +126,7 @@ After the components are averaged within Pollution and Climate Burden and Popula
 
 Figure 3 – Formula for MassEnviroScreen cumulative burden score
 
-![](MassEnviroScreenFormula2.jpg){fig-alt="MassEnviroScreen diagram of final formula"}
+![MassEnviroScreen diagram of final formula](MassEnviroScreenFormula2.jpg)
 
 \* The Environmental Effects and Climate Risks scores were weighted half as much as the Exposures score.
 
